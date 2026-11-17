@@ -1,0 +1,8 @@
+---
+inclusion: always
+---
+This rule describes how to use typescript across the project.
+
+- Use TypeScript for all code; prefer interfaces over types.
+- Avoid enums; use maps instead.
+- Use functional components with TypeScript interfaces.

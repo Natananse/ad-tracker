@@ -1,0 +1,22 @@
+{
+	"dependencies": {
+		"@repo/auth": "workspace:*",
+		"@repo/database": "workspace:*",
+		"@repo/logs": "workspace:*",
+		"@repo/utils": "workspace:*"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.6.7",
+		"@repo/tsconfig": "workspace:*",
+		"@types/node": "^26.6.6",
+		"nanoid": "^5.1.16",
+		"tsx": "^4.23.15"
+	},
+	"name": "@repo/scripts",
+	"private": true,
+	"scripts": {
+		"create:user": "dotenv -c -e ../../.env -- tsx ./src/create-user.ts",
+		"type-check": "tsc --noEmit"
+	},
+	"version": "0.0.0"
+}
