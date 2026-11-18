@@ -15,7 +15,7 @@
 	},
 	"packageManager": "pnpm@10.14.0",
 	"devDependencies": {
-		"@biomejs/biome": "^2.6.7",
+		"@biomejs/biome": "^2.6.8",
 		"@repo/tsconfig": "workspace:*",
 		"@types/node": "^26.6.6",
 		"dotenv-cli": "^11.1.0",
