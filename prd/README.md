@@ -1,44 +1,30 @@
-# Shopify ad tracking: research and product plan
+# Shopify ad tracking research and product plan
 
-Research date: **19 September 2026**. Status: proposal, not an implemented product.
+Updated **18 November 2026**. This proposal targets owner-operated Shopify stores that buy Meta and Google ads and reconcile campaign results themselves.
 
-## Recommendation
+## What to build
 
-Build a Shopify-first attribution and contribution-margin tool for owner-operated stores. Start with Shopify orders plus Meta and Google spend, transparent click attribution, refund-aware margins, and a clear explanation for every matched or unmatched order. Launch reporting before adding conversion forwarding.
+A weekly campaign report that answers **“After refunds, product costs, fulfillment and ad spend, which campaign left money to cover overhead?”** A merchant can open a campaign total, see its Shopify orders and refunds, and inspect the click evidence behind each allocation. Unmatched revenue and incomplete costs stay visible. The [worked example](04-mvp-requirements.md#first-usable-report) shows how the campaign with the higher return on ad spend can lose money.
 
-The proposed differentiator is **understandable evidence at a predictable monthly price**. This is a positioning hypothesis, not a demonstrated accuracy advantage.
+**Why someone might pay.** Shopify already reports campaign performance, Triple Whale has a free attribution plan, Augora advertises event debugging, and HYROS documents campaign-level refunds. The opportunity to test is whether a small team can reconcile its weekly numbers faster at a predictable, month-to-month price. A generic dashboard is a weak first product. [Competitor comparison](01-competitor-findings.md)
 
-A pure pixel-forwarding product has a weak starting position: Shopify already provides a native Meta Conversions API path. [Shopify data sharing](https://help.shopify.com/en/manual/promoting-marketing/analyze-marketing/meta-data-sharing)
+**How to price it.** Test $29/month for one store with up to 500 eligible orders and 100,000 behavioral events. Offer higher order bands at $59 and $99. Publish the limits, keep financial reconciliation in every tier, and measure support minutes and cost per store. At the proposed Starter price a 70% service margin leaves $8.70 for all monthly service costs. [Pricing and sensitivity analysis](06-pricing-and-unit-economics.md)
 
-## Reading order
+**First build.** Reuse the starter's accounts and organizations. Connect one development store and one authorized ad account. Trace a tagged click into a paid order, issue a partial refund and reproduce the corrected campaign total exactly once. Add the second read-only ad connector for the full reporting MVP. Run the same weekly task with pilot merchants using their existing tools. [Starter fit](05-architecture-and-starter-fit.md) · [Roadmap and pilot gates](07-roadmap-and-validation.md)
 
-| File | What it answers |
+## Research and specifications
+
+| Document | Use it to decide |
 |---|---|
-| [01 — Competitor findings](01-competitor-findings.md) | What Augora, Triple Whale, and Hyros sell; pricing evidence; strengths and uncertainties |
-| [02 — How tracking works](02-how-ad-tracking-works.md) | Pixels, orders, identity, attribution, ad feedback, and their limits |
-| [03 — Gaps and opportunities](03-gaps-and-opportunities.md) | Documented missing capabilities versus hypotheses to validate |
-| [04 — MVP requirements](04-mvp-requirements.md) | Target users, scope, screens, metrics, and acceptance criteria |
-| [05 — Architecture and starter fit](05-architecture-and-starter-fit.md) | What this repository provides and what needs building |
-| [06 — Pricing and cost model](06-pricing-and-unit-economics.md) | Proposed $29/$59/$99 plans, cost assumptions, and break-even sensitivity |
-| [07 — Delivery and validation](07-roadmap-and-validation.md) | Phases, technical tests, merchant interviews, and release gates |
-| [08 — Evidence register](08-sources-and-open-questions.md) | Sources, limitations, pricing conflicts, and unresolved research |
+| [Competitor findings](01-competitor-findings.md) | Which buyer and workflow to target against Augora, Triple Whale, HYROS and native Shopify |
+| [How tracking works](02-how-ad-tracking-works.md) | How events, orders, click evidence, attribution rules and optional ad-platform feedback fit together |
+| [Gaps and opportunities](03-gaps-and-opportunities.md) | Which limitations are documented, which ideas need testing, and which features deserve priority |
+| [MVP requirements](04-mvp-requirements.md) | Which screens, metric definitions and acceptance tests to implement |
+| [Architecture and starter fit](05-architecture-and-starter-fit.md) | Which parts of this repository to reuse and which data flows to build |
+| [Pricing and unit economics](06-pricing-and-unit-economics.md) | What a merchant would pay under each proposed band and what could make it unprofitable |
+| [Delivery and validation](07-roadmap-and-validation.md) | How to sequence the pilot and decide whether to invest further |
+| [Sources and open questions](08-sources-and-open-questions.md) | Which commercial and technical assumptions still need direct verification |
 
-## Decisions proposed
+The vendor briefs link individual workflow and pricing observations to public sources. [Augora AI](research/augora.md) · [Triple Whale](research/triple-whale.md) · [HYROS](research/hyros.md)
 
-- One commerce platform and two ad connectors initially; support ordinary Shopify storefront checkout first.
-- Read-only ad permissions in the MVP. No automatic budget changes.
-- Use an order ledger as the financial baseline; keep platform-reported conversions separate.
-- Preserve unknown attribution rather than inventing matches.
-- Publish plan limits and price-change rules; no percentage-of-revenue fee.
-- Make reconciliation, refunds, basic exports, and data-quality status available on every paid tier.
-- Defer AI until deterministic reporting works. AI can explain verified calculations later.
-- Build for Shopify App Store distribution, including Shopify billing and embedded-app requirements.
-
-## Evidence standard
-
-**Verified-public** means a current official page documents the capability; it does not mean we tested it. **Vendor claim** means marketing language or a reported outcome without independent validation. **Inference** describes likely implementation. **Proposal** describes our recommended product. **Unknown** means evidence was insufficient.
-
-No competitor accounts were purchased or logged into, no conversion-accuracy benchmark was run, and no merchants were interviewed. There is no basis yet for promising better ROAS, universal attribution, or lower pricing than every competitor.
-
-Repository inspection was read-only. Only this `prd/` documentation and research evidence were added.
-
+The evidence covers public materials and the local starter source. Comparative accuracy, paid-account behavior, contracted prices and willingness to pay still require merchant trials or written quotes.

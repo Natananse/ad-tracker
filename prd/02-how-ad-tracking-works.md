@@ -56,7 +56,7 @@ Record approved campaign parameters, click identifiers, event time, event ID, pe
 
 Use Shopify order data as the ledger baseline and browser checkout events as supporting evidence. Define when an order becomes eligible—proposed MVP: paid online-store orders; separately classify tests, cancellations, pending payments, POS, and draft orders.
 
-Store original monetary components and later adjustments. Webhook delivery can repeat or arrive out of order; the ingestion and reconciliation design must tolerate both. Never assume a checkout completion necessarily equals settled payment.
+Store original monetary components and later adjustments. Deduplicate webhook deliveries and reconcile missed or reordered changes. Shopify's checkout completion event can be absent if the relevant page fails to load. A paid order from Shopify should still appear in that case, with its attribution marked unknown when appropriate. [Shopify webhooks](https://shopify.dev/docs/apps/build/webhooks) · [Checkout completion event](https://shopify.dev/docs/api/web-pixels-api/standard-events/checkout_completed)
 
 ### 4. Identity and joins
 
@@ -64,7 +64,7 @@ Prefer a documented checkout/order reference, then a permitted first-party sessi
 
 Do not join people solely by IP, infer cross-device certainty from similar devices, or share identity graphs between merchants. Preserve the evidence type: order reference, session link, known customer link, self-reported survey, or unknown. Hashing an identifier does not automatically make it anonymous.
 
-Historical Shopify orders can be imported; historical browser journeys that were never collected cannot be recreated.
+Shopify grants access to the most recent 60 days of orders by default. Older orders require additional approval. Show the earliest imported order date separately from the date pixel collection started. An older paid order can be present in the ledger without any historical click to credit. [Shopify Order object](https://shopify.dev/docs/api/admin-graphql/latest/objects/Order)
 
 ### 5. Attribution calculation
 
@@ -76,7 +76,7 @@ Keep paid, organic, referral, email, observed direct, and unknown buckets distin
 
 ### 6. Spend normalization
 
-Import account/campaign/ad identifiers, spend, account timezone, currency, and reporting dates. Names can change: join on IDs. Store each connector's last successful sync and error state.
+Read campaign and ad costs using Meta Insights and Google Ads reporting. Persist provider IDs alongside names so renaming a campaign preserves its history. Store the account timezone, currency, reporting date, last successful sync and error state. Aggregate spend supplies the denominator for ROAS. Linking a particular purchase to a click still requires separate evidence. [Meta Insights](https://developers.facebook.com/documentation/ads-commerce/marketing-api/insights) · [Google Ads reporting](https://developers.google.com/google-ads/api/docs/reporting/overview)
 
 A cross-channel total requires compatible currencies and date semantics. Show an unsupported-currency warning instead of adding dollars and euros. Proposed MVP supports one reporting currency with same-currency ad accounts; conversion support comes later.
 
@@ -84,7 +84,7 @@ A cross-channel total requires compatible currencies and date semantics. Show an
 
 Default to reporting-only when an existing native integration already owns purchase delivery. Shopify's Meta integration can already forward purchases server-to-server. A second sender can introduce duplicate conversions if its IDs do not align. [Shopify Meta data sharing](https://help.shopify.com/en/manual/promoting-marketing/analyze-marketing/meta-data-sharing)
 
-Before activation, establish the destination pixel, event ownership, deduplication contract, consent eligibility, and a real test event. Use stable event IDs, durable delivery records, retries with backoff, and redacted diagnostics. Verify current Meta deduplication requirements during the integration spike; the developer page was inaccessible in this research.
+Before activation, identify who already sends purchases to the destination. Meta documents matching the event name and event ID between a browser pixel and its corresponding server event for the same pixel within 48 hours. That pairing alone cannot establish that two independent server senders cooperate. Keep forwarding off until a test purchase produces one counted purchase for that merchant's configuration. [Meta deduplication guide](https://developers.facebook.com/documentation/ads-commerce/conversions-api/deduplicate-pixel-and-server-events)
 
 Google Analytics Measurement Protocol sends data to GA4 and supplements tagging. It is not itself a Google Ads enhanced-conversion implementation. Choose and validate a specific supported Google Ads conversion path separately. [Measurement Protocol](https://developers.google.com/analytics/devguides/collection/protocol/ga4), [Google Ads server-side setup](https://developers.google.com/tag-platform/tag-manager/server-side/ads-setup)
 

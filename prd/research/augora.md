@@ -1,0 +1,24 @@
+# Augora AI
+
+Public-source review, 18 November 2026. Augora targets Shopify merchants who want to trace orders to ads, send conversion events to advertising platforms, and manage campaigns. The evidence below comes from the public product page, developer listing and service disclosures. We did not install the product or observe a customer's account. [Augora product page](https://augora.ai/) · [Augora privacy policy](https://augora.ai/legal/privacy)
+
+## Merchant workflow
+
+| Step | What the public evidence shows |
+|---|---|
+| Connect a store | Augora describes connecting Shopify, Meta and Google through OAuth. It syncs Shopify orders to calculate revenue and return on ad spend. Augora also publishes a Chrome extension for installing and verifying its tracking script with an existing account. Its listing shows version 1.0.1, updated 13 February 2025. Searches did not establish a public Augora Shopify App Store listing. [Augora privacy policy](https://augora.ai/legal/privacy) · [Augora AI Installer](https://chromewebstore.google.com/detail/augora-ai-installer/migancmdogfgnchcfnbgkaggceinmckf) |
+| Trace a sale | A homepage illustration maps one Shopify sale to a Meta campaign, ad set and individual ad. Augora advertises branded campaign links, a storefront pixel and an event feed with match and duplicate indicators. The illustration demonstrates what a credited sale looks like. Anonymous return visits, competing clicks and unmatched orders would require testing. [Augora product page](https://augora.ai/) |
+| Send an event | The homepage names Meta Conversions API and Google's Measurement Protocol. Google defines the latter as an endpoint for Google Analytics events. Augora separately discloses Google Ads conversion uploads when the merchant configures that integration. Delivery, destination acceptance and attribution in reports each require separate verification. [Augora product page](https://augora.ai/) · [Google Measurement Protocol](https://developers.google.com/analytics/devguides/collection/protocol/ga4) · [Augora privacy policy](https://augora.ai/legal/privacy) |
+| Make a campaign decision | Augora advertises Shopify-to-platform revenue comparisons, budget edits, campaign pauses and team access across stores. Its assistant examples include comparing Meta and Google performance and renaming ads. The vendor also names GA4 and Klaviyo as assistant data sources. Account-level availability and controls for approving changes remain unverified. [Augora product page](https://augora.ai/) |
+
+## Pricing and data terms
+
+Augora offers a free trial and advertises cancellation at any time. The terms direct buyers to a pricing page or order form and generally exclude fee refunds except where the law requires them. The public pages reviewed did not establish a numeric subscription price, trial duration, billing cadence, store or event allowance, or overages. For a one-store merchant running both Meta and Google, the comparable monthly cost remains unknown. A dated offer at the same order and event volumes would resolve the comparison. [Augora product page](https://augora.ai/) · [Augora terms, sections 4 and 7](https://augora.ai/legal/terms)
+
+Augora's policy dated 4 November 2026 specifies 24 months of event retention, allows earlier deletion requests, and ties credential retention to disconnection or store deletion. Its terms say data is deleted within 30 days after termination, subject to legal retention. Historical import coverage, attribution lookback windows and the period visible in customer reports are separate questions. [Augora privacy policy, section 4](https://augora.ai/legal/privacy) · [Augora terms, section 7](https://augora.ai/legal/terms)
+
+## What to test against Augora
+
+- **Refund-adjusted campaign contribution.** A merchant could compare a campaign before and after one partially refunded order, then trace the change to revenue, cost of goods and shipping. Augora discusses margins and synchronizes orders. The public sources reviewed give no worked example of its refund allocation. The opportunity is faster verification of a disputed margin. [Augora product page](https://augora.ai/) · [Augora privacy policy](https://augora.ai/legal/privacy)
+- **An explanation for an unassigned order.** Compare how quickly a merchant can distinguish absent click evidence from a delayed import and see the effect on the campaign total. Augora already advertises event debugging. The public demonstration covers a successful match, leaving the unmatched-order workflow open for comparison. [Augora product page](https://augora.ai/)
+- **Predictable costs.** Show a store owner what their bill would be in a normal month and during a promotion. Validate willingness to pay for published limits and clear overages against a real Augora quote. Relative savings remain unverified. [Augora terms, section 4](https://augora.ai/legal/terms)

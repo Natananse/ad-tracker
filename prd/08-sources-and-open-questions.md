@@ -1,78 +1,35 @@
-# Sources, evidence quality, and open questions
+# Evidence register and open decisions
 
-Research date: **19 September 2026**. Official public sources were prioritized. Product behavior was not tested.
+Updated 18 November 2026. Public product pages, commercial terms, help-center articles, developer documentation and the starter source support different kinds of conclusions. Prices below describe what a buyer could verify publicly on the review date. Account-specific performance and written quotes remain open.
 
-## Evidence register
+## Competitor evidence
 
-| ID | Source | Used for | Qualification |
-|---|---|---|---|
-| A1 | [Augora](https://augora.ai/) | Product scope and public claims | Marketing page; numeric pricing not established |
-| T1 | [Triple Whale pricing](https://www.triplewhale.com/pricing) | Packaging, free tier, GMV basis and commitment | Dynamic paid prices not extracted |
-| T2 | [Triple Pixel](https://kb.triplewhale.com/en/articles/5960325-how-the-triple-pixel-works) | Public tracking explanation | Vendor documentation |
-| T3 | [Attribution models](https://kb.triplewhale.com/en/articles/5960333-understanding-and-utilizing-attribution-models) | Rules and normalized versus platform-level credit | Documentation, not an independent accuracy study |
-| T4 | [Non-attributed conversions](https://kb.triplewhale.com/en/articles/11570583-understanding-non-attributed-conversions) | Documented limitations | Not a universal or measured error rate |
-| T5 | [Post-purchase surveys](https://kb.triplewhale.com/en/articles/6486354-post-purchase-survey-pps-for-shopify-stores) | Specific missing survey capabilities | Applies to native survey, not every integration |
-| T6 | [Shopify listing](https://apps.shopify.com/triplewhale-1) | Rating/count snapshot | No systematic review-sentiment analysis |
-| H1 | [Hyros tracking pricing](https://hyros.com/pricing-ai-tracking) | Current entry offer | Promotion/date ambiguity; no binding quote |
-| H2 | [Hyros explanatory article](https://hyros.com/updates/what-is-hyros/) | Mechanism and older price conflict | Pricing text identifies April 2026 |
-| H3 | [Hyros ad tracking](https://hyros.com/ad-tracking) | Current product emphasis | Performance claims not independently verified |
-| H4 | [Hyros AIR pricing](https://hyros.com/pricing-air-agent) | Distinguishing separate remarketing product | Not tracking subscription pricing |
-| H5 | [Hyros docs](https://docs.hyros.com/) | Documentation discovery | Shopify text endpoint unreliable; not relied on for detailed setup |
-| S1 | [Shopify pixels](https://shopify.dev/docs/apps/build/marketing/pixels) | App pixel approach | Check current SDK/sandbox behavior during implementation |
-| S2 | [Pixel privacy](https://shopify.dev/docs/api/web-pixels-api/pixel-privacy) | Permission and consent interface | Different from unrestricted storefront APIs |
-| S3 | [Protected customer data](https://shopify.dev/docs/apps/launch/protected-customer-data) | Data-access review and minimization | Approval is an external dependency |
-| S4 | [Privacy compliance](https://shopify.dev/docs/apps/build/compliance/privacy-law-compliance) | Mandatory webhooks | Platform requirements; not a complete legal assessment |
-| S5 | [App Store requirements](https://shopify.dev/docs/apps/launch/shopify-app-store/app-store-requirements) | Billing and embedded-app constraints | Recheck before submission |
-| S6 | [Shopify App Pricing](https://shopify.dev/docs/apps/launch/billing/shopify-app-pricing) | Public app billing route | Verify support for proposed usage policy |
-| S7 | [Meta data sharing](https://help.shopify.com/en/manual/promoting-marketing/analyze-marketing/meta-data-sharing) | Native server-side purchase delivery | Baseline competitor and coexistence consideration |
-| G1 | [GA4 Measurement Protocol](https://developers.google.com/analytics/devguides/collection/protocol/ga4) | GA4 versus Ads distinction | Do not assume Ads activation from GA4 delivery |
-| G2 | [Google Ads server-side setup](https://developers.google.com/tag-platform/tag-manager/server-side/ads-setup) | Separate Ads conversion integration | Future implementation requires chosen path |
-| G3 | [Google Ads access migration](https://developers.google.com/google-ads/api/docs/api-policy/developer-token) | Current API onboarding caution | Body and summary contain inconsistent old/new language; verify project access live |
-
-## Important research conflicts
-
-1. **Hyros pricing:** Prefer the direct pricing-page observation over the dated article, but get a quote. The promotion banner's date is inconsistent with the retrieval date. No savings percentage is defensible yet.
-2. **Triple Whale:** The direct page describes current packages and annual commitment; numerical paid prices were unavailable in extracted text. Do not substitute historical third-party tier names or dollar figures.
-3. **Augora:** Retrieved FAQ headings include topics whose full answers were not available. Headings alone do not establish detailed implementation or profit accounting.
-4. **Shopify privacy interfaces:** The general pixel page and detailed sandbox privacy page use different wording. Implement against the exact extension SDK and test consent changes.
-5. **Google API access:** The migration page body states that developer tokens were sunset on September 9, 2026 and access moved to Google Cloud projects, while its summary still describes the older token model. Use the current onboarding flow and verify access with an actual permitted reporting request.
-6. **Starter versions:** Package manifests differ from older README/steering documentation. This plan uses inspected manifests for declared versions and does not imply dependencies were installed.
-
-## Research method and limitations
-
-Inspected the starter's README, steering documents, package manifests, database schema/export selection, API router/authorization helpers, payment provider selection, and dashboard source.
-
-Browsed official homepages, pricing, help centers, Shopify platform documentation, and Google technical documentation. Search snippets were discovery aids; the direct Hyros offer and native Shopify Meta behavior were subsequently opened.
-
-Firecrawl and DataForSEO tools were not available. No SEO traffic, funding, team size, backlink, or keyword numbers were invented. They are not required to decide the initial product scope.
-
-A short [evidence capture log](research/evidence-capture-log.md) preserves selected observations and brief excerpts. Full third-party pages are not reproduced. This is a scoped product/pricing/technical study, not an exhaustive feature audit.
-
-Unavailable or unverified:
-
-- Augora paid plan amounts, usage limits, retention and customer-level attribution rules.
-- Exact Triple Whale paid quote for a representative target merchant.
-- Hyros applicable price/term after the observed promotion.
-- Competitor export samples, API behavior, mobile performance, consent behavior, and support quality.
-- Meta developer deduplication page: direct retrieval failed; verify before activation work.
-- Hyros Shopify text installation guide: unreliable retrieval.
-- Actual infrastructure prices at measured load, marketplace fees, and merchant willingness to pay.
-- Accuracy or revenue lift compared against a controlled ground truth.
-
-## Questions to resolve next
-
-| Question | Evidence needed | Decision affected |
+| Product | Where to verify it | What it establishes |
 |---|---|---|
-| Which store segment will pay? | Recorded workflow interviews and paid pilots | Positioning and price |
-| Is attribution explanation a recurring pain? | Users diagnosing actual orders | P0 differentiation |
-| Can checkout/order joins be implemented reliably? | Dev-store traces and consent matrix | Technical feasibility |
-| Can the app access required Meta/Google data? | Approved project/app and successful API calls | Connector scope |
-| What is cost per merchant at p95 workload? | Load tests plus vendor quotes | Plan allowances |
-| Are survey gaps meaningful to buyers? | Demonstrated downstream workflow | P1 survey investment |
-| Is native reporting already sufficient? | Side-by-side task comparison | Go/no-go |
-| What counts as a useful profit view? | Cost availability and merchant accounting conventions | Metrics and imports |
+| Augora | [Product](https://augora.ai/) · [Privacy policy](https://augora.ai/legal/privacy) · [Terms](https://augora.ai/legal/terms) · [Research brief](research/augora.md) | Advertised tracking layers, Shopify order sync, conditional Google Ads uploads, event retention and published cancellation terms. The public pages reviewed leave comparable subscription pricing and refund attribution open. |
+| Triple Whale | [Pricing](https://www.triplewhale.com/pricing) · [Plan guide](https://kb.triplewhale.com/en/articles/16046642-understanding-triple-whale-plans-foundation-automate-and-enterprise) · [Research brief](research/triple-whale.md) | Free plan capabilities and window limit, annual GMV-based paid plans and 12-month commitment. The paid acquisition path offers a walkthrough. Obtain the actual price for the merchant's GMV and term. |
+| Triple Whale measurement | [Attribution models](https://kb.triplewhale.com/en/articles/5960333-understanding-and-utilizing-attribution-models) · [Unattributed orders](https://kb.triplewhale.com/en/articles/11570583-understanding-non-attributed-conversions) · [Costs](https://kb.triplewhale.com/en/articles/6953395-set-your-cogs) · [Surveys](https://kb.triplewhale.com/en/articles/6486354-post-purchase-survey-pps-for-shopify-stores) | Distinctions between platform credit and financial totals, known tracking gaps, cost adjustments, and limitations of the native survey. |
+| HYROS | [Pricing](https://hyros.com/pricing-ai-tracking) · [Shopify campaign](https://hyros.com/shopify) · [Terms](https://hyros.com/terms) · [Research brief](research/hyros.md) | Current quote process and separately advertised $199 monthly starting figure. The September capture showed $69 alongside a dated promotion. Eligibility and continued availability were unverified. Use a written quote for a particular store. |
+| HYROS measurement | [Shopify integration release](https://hyros.com/updates/changelog/version-2-1-5/) · [Refund reporting](https://hyros.com/updates/dropshipping-ad-tracking/) · [API reference](https://api-docs.hyros.com/) | Documented installation and sales sync, vendor-described campaign adjustments, and the distinction between a refunded sale and a refund issued during a reporting period. |
 
-## Immediate next action
+The [September capture](research/evidence-capture-log.md) is an archive. The November vendor briefs supersede it for present-day buying decisions. An old review count, promotion, or third-party estimate is a poor basis for a savings or accuracy claim.
 
-Validate the ledger and event joins in a Shopify development store, alongside merchant interviews. Then implement the reporting MVP only if the access, demand, and cost gates in the roadmap pass.
+## Platform and operating assumptions
 
+| Decision | Primary evidence | What to verify in the pilot |
+|---|---|---|
+| Compare with the merchant's existing tools | [Shopify marketing reports](https://help.shopify.com/en/manual/reports-and-analytics/shopify-reports/report-types/default-reports/marketing-reports) · [Native Meta sharing](https://help.shopify.com/en/manual/promoting-marketing/analyze-marketing/meta-data-sharing) | Which reports the merchant already uses, which channels supply spend, and whether native purchase forwarding is enabled |
+| Capture orders across browser failures | [Shopify webhooks](https://shopify.dev/docs/apps/build/webhooks) · [Checkout completion event](https://shopify.dev/docs/api/web-pixels-api/standard-events/checkout_completed) · [Order history access](https://shopify.dev/docs/api/admin-graphql/latest/objects/Order) | Order and refund reconciliation after duplicate delivery, a missed browser event and a late adjustment. Display the actual backfill boundary. |
+| Link permitted storefront evidence | [Shopify pixel sandbox](https://shopify.dev/docs/apps/build/marketing/pixels) · [Pixel privacy](https://shopify.dev/docs/api/web-pixels-api/pixel-privacy) · [Protected customer data](https://shopify.dev/docs/apps/launch/protected-customer-data) | Supported identifiers, approved field access, consent changes, and unknown attribution when evidence is unavailable |
+| Import campaign costs | [Meta Insights](https://developers.facebook.com/documentation/ads-commerce/marketing-api/insights) · [Google Ads reporting](https://developers.google.com/google-ads/api/docs/reporting/overview) · [Google access migration](https://developers.google.com/google-ads/api/docs/api-policy/developer-token) | Actual approved accounts, scopes, quotas, timezones, spend totals and refresh lag. Google's migration guide describes project-based access. Prove production access with a real authorized read. |
+| Add optional feedback after the reporting gate | [Meta deduplication](https://developers.facebook.com/documentation/ads-commerce/conversions-api/deduplicate-pixel-and-server-events) · [GA4 Measurement Protocol](https://developers.google.com/analytics/devguides/collection/protocol/ga4) · [Google Ads server-side conversions](https://developers.google.com/tag-platform/tag-manager/server-side/ads-setup) | One purchase received once in the intended destination, with compatible ownership, consent and event identifiers. GA4 collection and Google Ads activation are distinct integrations. |
+| Distribute and bill the app | [Distribution methods](https://shopify.dev/docs/apps/launch/distribution/select-distribution-method) · [Shopify App Pricing](https://shopify.dev/docs/apps/launch/billing/shopify-app-pricing) · [Privacy webhooks](https://shopify.dev/docs/apps/build/compliance/privacy-law-compliance) | Live-store distribution eligibility, subscription changes, uninstall, erasure and reinstall |
+| Set a sustainable entry price | [Shopify fees](https://shopify.dev/docs/apps/launch/distribution/revenue-share) · [Queue pricing example](https://developers.cloudflare.com/queues/platform/pricing/) · [Unit economics](06-pricing-and-unit-economics.md) | Real billed cost per store, peak events per order, support minutes and willingness to pay |
+
+## Evidence still needed to make the investment decision
+
+1. **Demand.** Observe 10–15 owners reviewing their last ad-budget decision. Record the discrepancy, the current workaround, time spent, and the name of the person who would approve payment. Aim for five paid-pilot commitments.
+2. **Product advantage.** Give a merchant the same week's data in the proposed report and in the tools they normally use. Time the investigation of one partial refund and one unmatched order. Record the correct explanation and whether it changes a budget decision.
+3. **Like-for-like pricing.** Use the two store profiles in the cost model, capture live quotes with renewal terms and include the free baseline. Ask what paid tool or weekly task the new subscription could replace.
+4. **Access and reliability.** Reconcile two isolated development stores, then compare source-order and campaign totals daily during the merchant pilot. Track unexplained variance separately from unknown attribution.
+5. **Economics.** Measure support and infrastructure cost per tier. Continue at the proposed prices only if merchants pay and the service margin can support ongoing operation. [Release gates](07-roadmap-and-validation.md)

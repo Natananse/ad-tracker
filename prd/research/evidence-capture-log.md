@@ -1,6 +1,6 @@
-# Evidence capture log
+# September 2026 evidence archive
 
-Captured 19 September 2026 using public web retrieval. Brief excerpts are included for volatile details; the findings documents provide interpretation. No authenticated testing occurred.
+The following observations date to 19 September 2026. For the 18 November 2026 price and feature comparison, use the updated [Augora](augora.md), [Triple Whale](triple-whale.md) and [HYROS](hyros.md) briefs. In particular, HYROS's tracking page now offers a custom quote, and the Triple Whale listing below no longer displays that historical rating.
 
 | Page | Capture |
 |---|---|

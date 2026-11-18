@@ -12,7 +12,9 @@ Effort ranges are planning estimates for one experienced full-time engineer with
 - Quote infrastructure against estimated event volumes.
 - Obtain exact competitor quotes at comparable store sizes and commitment periods.
 
-**Gate:** End-to-end technical feasibility plus five credible paid-pilot commitments. If Google approval is delayed, a Meta-only private pilot can continue, but the public promise must reflect actual availability.
+Start with a development store. For a pilot across independent live merchants, plan for public distribution and review. Shopify limits multi-store installs of a custom-distributed app to stores in the same Plus organization. Recruit pilot merchants while approval is pending. [Shopify distribution methods](https://shopify.dev/docs/apps/launch/distribution/select-distribution-method)
+
+Proceed once the core integrations work in testing and five merchants commit to a paid pilot. If Google access takes longer, offer consenting pilot merchants a clearly priced Meta-only report.
 
 ## Phase 1 — Financial foundation (2–3 weeks)
 

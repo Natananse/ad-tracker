@@ -1,6 +1,6 @@
 # Architecture and fit with this starter
 
-Repository inspected on 19 September 2026. This is a targeted foundation review, not a security audit or runtime certification.
+The starter's dashboard, registered API routes, payment provider, database models, configuration and web package versions were rechecked in source on 18 November 2026.
 
 ## What the repository actually contains
 
@@ -88,7 +88,7 @@ Declare pixel privacy requirements and honor consent changes through Shopify-sup
 
 Implement and verify `customers/data_request`, `customers/redact`, and `shop/redact`; invalid compliance-webhook HMAC must be rejected. [Privacy webhooks](https://shopify.dev/docs/apps/build/compliance/privacy-law-compliance)
 
-For the planned public app, use Shopify App Pricing or Billing API and an embedded experience consistent with current review requirements. The existing Polar billing path cannot simply become the Shopify app subscription flow. [App Store requirements](https://shopify.dev/docs/apps/launch/shopify-app-store/app-store-requirements), [Shopify App Pricing](https://shopify.dev/docs/apps/launch/billing/shopify-app-pricing)
+Use Shopify App Pricing for the proposed public app's fixed monthly subscriptions. Shopify makes it the default for new public apps with supported pricing models. Let the merchant approve the plan in Shopify and verify the subscription before granting access. The starter's Polar integration serves its existing SaaS billing. [Shopify App Pricing](https://shopify.dev/docs/apps/launch/billing/shopify-app-pricing) · [App Store requirements](https://shopify.dev/docs/apps/launch/shopify-app-store/app-store-requirements)
 
 Additional proposed controls:
 

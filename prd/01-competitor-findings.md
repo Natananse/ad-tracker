@@ -1,72 +1,22 @@
-# Competitor findings
+# Competitor findings for a Shopify ad tracker
 
-Snapshot: 19 September 2026. Public-source review; not a hands-on product audit.
+Public sources checked 18 November 2026. Three products sell different jobs. Compare each with what the merchant actually buys and with the reporting already in their Shopify admin.
 
-## Augora AI
+| Product | How a merchant uses it | Pricing evidence | What to take from it |
+|---|---|---|---|
+| Augora AI | Connect a store and ad accounts, follow tagged campaigns, inspect events and forward eligible signals. Its assistant also advertises campaign changes. | Trial advertised. The reviewed pages establish neither a dollar price nor an included volume. [Product](https://augora.ai/) · [Terms](https://augora.ai/legal/terms) | Use an event feed that helps a merchant diagnose a failed match. Test how each product explains a refund and an order with no observed click. |
+| Triple Whale | Combine store and ad data, switch attribution models, then open an attributed order and its journey. The suite also supports product costs, surveys and automation. | Free includes first- and last-click reporting. Paid packages depend on annual GMV and carry a 12-month term with monthly or annual billing. A comparable numeric paid quote is outstanding. [Pricing](https://www.triplewhale.com/pricing) · [Triple Pixel](https://kb.triplewhale.com/en/articles/5960325-how-the-triple-pixel-works) | Use its free plan as a benchmark. An order drilldown or a ROAS chart alone gives merchants little reason to switch. |
+| HYROS | Connect store transactions and traffic sources, build customer histories, review source credit and send signals to ad platforms. Assisted setup and support extend across ecommerce and longer sales funnels. | Its Shopify landing page advertises a starting figure of $199/month. The current pricing flow asks about the business and tracked revenue and directs buyers to a custom quote. The page gives no applicable band or term for the $199 figure. [Shopify offer](https://hyros.com/shopify) · [Pricing](https://hyros.com/pricing-ai-tracking) | A self-serve report with a published order allowance and explicit renewal terms is a narrower offer a small shop can evaluate before booking a call. |
+| Existing Shopify workflow | Review channel and campaign reports, change the attribution model, and inspect per-order conversion details. Spend-based measures depend on the channel supplying cost data. Certain Meta sharing settings already send purchases from Shopify to Meta. | Included capabilities are the baseline for a merchant who already uses these Shopify features. [Marketing reports](https://help.shopify.com/en/manual/reports-and-analytics/shopify-reports/report-types/default-reports/marketing-reports) · [Meta data sharing](https://help.shopify.com/en/manual/promoting-marketing/analyze-marketing/meta-data-sharing) | Reproduce the merchant's weekly budget review in their existing tools before asking them to buy another subscription. |
 
-**Positioning and features — vendor-documented:** Shopify conversion recovery using browser events, server forwarding to Meta CAPI/Google Measurement Protocol, and campaign-tagged short links. It also advertises an event debugger, multi-store/team support, encrypted tokens, and an AI agent reading Shopify, Meta, Google Ads, GA4, and Klaviyo with ad-management actions.
+## What differs under the hood
 
-**Pricing:** No numeric public plan was established from the retrieved homepage. A free-trial CTA and cancellation language are visible. Do not infer a price or claim our proposal is cheaper.
+**Augora** describes a browser pixel, tagged short links carrying ad identifiers and server-side event delivery. It also documents syncing Shopify orders and conditionally uploading Google Ads conversions. Its homepage's reference to Google Measurement Protocol describes a GA4 destination. A merchant can observe a server accepting a purchase while the ad click that preceded it remains unknown. The public materials establish the integrations and a 24-month event retention policy. They leave open the precise attribution rules and treatment of refunds. [Augora workflow and evidence](research/augora.md)
 
-**Strength:** A focused owner-operator workflow and accessible diagnostics.
+**Triple Whale** lets a merchant inspect multiple ways to credit the same order. Some models allocate one order's value across its touches. Triple Attribution can credit more than one platform fully, so adding platform rows can exceed the store's receipts. The company also documents historical product costs, refund adjustments and several limits of its native survey. Test whether the proposed report makes a specific discrepancy faster to resolve. [Triple Whale workflow and evidence](research/triple-whale.md)
 
-**Unknowns:** Attribution rules, identity persistence, retention, billing limits, independent accuracy, and performance under missing consent. Its universal recovery language is marketing, not proof.
+**HYROS** emphasizes following leads and sales across funnels and returning conversion signals to ad platforms. Its own guidance describes mapping refunds to campaigns. The opportunity for a Shopify-only tool is to explain the financial result in a short, self-serve workflow. A merchant using a CRM, call tracking or long sales cycles would need a different comparison. [HYROS workflow and evidence](research/hyros.md)
 
-**Implication:** A dashboard, AI chat, multi-store support, and event debugging would not be novel against this product.
+## Buying decision
 
-**How it works:** Its public description suggests collection → enrichment/matching → forwarding → reporting; the private implementation is undisclosed.
-
-Source: [Augora homepage](https://augora.ai/). Capture: [evidence log](research/evidence-capture-log.md).
-
-## Triple Whale
-
-**Positioning — verified-public:** A broad ecommerce measurement and AI platform.
-
-**Packaging:** Free, Foundation, Automate, Enterprise. The free package includes first/last-click tracking; paid packaging adds broader attribution and analytics, while higher tiers add automation and enterprise measurement. Paid pricing depends on annual GMV. The FAQ describes 12-month subscriptions, billed monthly or annually; monthly billing does not imply month-to-month cancellation. Sonar is included in new paid packages. Exact paid amounts were not exposed in the retrieved pricing text.
-
-**Strength:** Breadth and an existing free entry point make a cheaper generic dashboard difficult to differentiate.
-
-**Uncertainty:** Dynamic price selection needs an exact GMV/package/cadence quote. Some security availability language differs between the comparison text and FAQ; verify before making feature claims.
-
-Source: [pricing](https://www.triplewhale.com/pricing). Capture: [evidence log](research/evidence-capture-log.md).
-
-### Tracking and analytics
-
-Triple Pixel connects observed journeys to orders. Its model documentation distinguishes normalized revenue allocation from platform-level credit. In particular, Triple Attribution can assign full credit independently to multiple platforms; summing that model is not financial revenue. Other models support reconciled allocation. This is an intended analytical distinction, not evidence of a software defect. [Pixel explanation](https://kb.triplewhale.com/en/articles/5960325-how-the-triple-pixel-works), [model definitions](https://kb.triplewhale.com/en/articles/5960333-understanding-and-utilizing-attribution-models)
-
-Its documentation acknowledges unattributed orders, including pixel failures and incomplete journeys. A serious alternative must expose uncertainty too. [Non-attributed conversions](https://kb.triplewhale.com/en/articles/11570583-understanding-non-attributed-conversions)
-
-### Specific limitations
-
-The native survey cannot write responses to Shopify metafields/tags/Flow; open-ended questions lack a skip option; some default response labels cannot be translated. These are documented feature gaps, not claims about the entire analytics platform. See the prioritized opportunities in [03](03-gaps-and-opportunities.md). [Survey documentation](https://kb.triplewhale.com/en/articles/6486354-post-purchase-survey-pps-for-shopify-stores)
-
-The App Store listing displayed **4.1/5 from 91 reviews** during research. This is a mutable listing snapshot, not a representative survey of all customers; review sentiment was not systematically sampled. [Shopify listing](https://apps.shopify.com/triplewhale-1)
-
-## Hyros
-
-**Positioning — vendor-documented:** Cross-channel attribution for ecommerce and broader funnels, including delayed sales, repeat purchases, and subscriptions. Current marketing emphasizes Swarm Tracking, ad-platform feedback, ad-manager overlays, and AI/MCP access. [Ad tracking](https://hyros.com/ad-tracking)
-
-**Mechanism — vendor description:** Site interaction identifiers are connected to transactions and customer journeys; known identifiers can connect sessions when available. Its discussion of server-side delivery and identity matching does not prove complete or causal attribution. Do not copy fingerprinting as an MVP requirement. [How Hyros works](https://hyros.com/updates/what-is-hyros/)
-
-**Current pricing evidence:** The direct tracking pricing page displays **$69/month for up to $5,000 tracked monthly revenue**, a revenue selector, assisted setup, and an all-features message. It also shows a promotion mentioning September 18 despite this September 19 retrieval. Treat the amount as an observed offer; eligibility, commitment, expiry, and larger-store prices need confirmation. [Tracking pricing](https://hyros.com/pricing-ai-tracking)
-
-**Conflicting official evidence:** An older official article explicitly dates its pricing to April 2026 and lists Organic from $49, and Business from $230/month on an annual plan. Do not use those figures as the current tracking price floor. [Older article](https://hyros.com/updates/what-is-hyros/)
-
-**Separate product:** AIR pricing is message-based and must not be confused with attribution subscription pricing. [AIR pricing](https://hyros.com/pricing-air-agent)
-
-**Strength:** Broad funnel coverage and assisted implementation. **Opportunity hypothesis:** A smaller Shopify-only product can reduce onboarding and operating complexity. **Unknown:** Contract specifics and comparative accuracy. The Shopify documentation endpoint was discovered but could not be reliably retrieved; detailed installation behavior remains unverified.
-
-Capture: [evidence log](research/evidence-capture-log.md).
-
-## Comparison for our product decision
-
-| Dimension | Augora | Triple Whale | Hyros | Proposed product |
-|---|---|---|---|---|
-| Primary emphasis | Conversion recovery | Ecommerce measurement and AI | Attribution across broader funnels | Shopify reconciliation and clear decisions |
-| Cheap/basic substitutes | Public price unknown | Free package exists | Low-revenue entry offer observed | Must prove value beyond native/free tools |
-| Product complexity to compete with | Focused workflow | Broad suite | Broad integration surface | Deliberately narrow |
-| Accuracy superiority established? | No independent test here | No independent test here | No independent test here | No product benchmark yet |
-| Best competitive response | Explain evidence better | Avoid recreating the suite | Avoid broad funnel commitments | Validate with real merchant workflows |
-
-The recommendation is not to clone all three. Build the smallest paid workflow merchants repeatedly use to reconcile orders, assess contribution, and diagnose uncertainty.
-
+For a store that only needs channel-level spend and sales, start by demonstrating the existing Shopify report and Triple Whale Free. For a store that regularly reconciles refunds, missing click evidence and product costs by hand, test a report that answers three questions in one place. Which campaign contributed money after ads? Which orders account for that result? What changed since last week's report? Measure the time saved and ask for a paid pilot before treating that difference as a business. [Feature gaps](03-gaps-and-opportunities.md) · [Pricing scenarios](06-pricing-and-unit-economics.md)

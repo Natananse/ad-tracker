@@ -46,6 +46,22 @@ Autonomous ad changes; Google Ads conversion activation; probabilistic fingerpri
 
 Installation readiness is separate from attribution readiness: a healthy new pixel cannot show weeks of historical click evidence.
 
+## First usable report
+
+A merchant reviewing two campaigns should be able to decide which deserves a closer look, then reproduce the comparison from the underlying orders. This fictional fixture uses USD, one attribution model and window, no taxes or shipping income, and complete costs. Each column covers the same week. Assume the refunds have no associated recoverable inventory.
+
+| Weekly campaign totals | Campaign A | Campaign B |
+|---|---:|---:|
+| Paid merchandise sales after discounts | $1,000 | $700 |
+| Merchandise refunds | $200 | $0 |
+| Attributed net merchandise revenue | $800 | $700 |
+| Ad spend | $200 | $200 |
+| Return on ad spend after refunds | 4.0× | 3.5× |
+| Product, fulfillment and payment costs | $650 | $320 |
+| Contribution after ads | **−$50** | **$180** |
+
+Campaign A leads on return on ad spend. Campaign B leaves more money to cover overhead. Clicking A's $200 in refunds should reveal the order adjustments behind it. Replaying the same refund must leave the total at $200. Removing a product cost must change the contribution to an incomplete estimate. Measure whether a merchant can explain these results without help.
+
 ## Definitions that must be visible in the product
 
 | Metric | Proposed definition |

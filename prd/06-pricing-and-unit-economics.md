@@ -1,10 +1,10 @@
 # Pricing and making the product cheaper to operate
 
-All proposed prices, workloads, costs and conversion rates below are planning assumptions—not quotes, benchmarks, or validated willingness to pay. Currency: USD before tax.
+Dollar amounts are USD before tax. Proposed subscription prices and operating budgets are scenarios for a pilot. Published fee schedules are linked where used.
 
 ## Competitive reality
 
-See [competitor findings](01-competitor-findings.md) for the source-backed pricing snapshot. Exact Augora pricing and comparable Triple Whale paid quotes remain unknown; Hyros has conflicting dated/current official offers. Do not publish a percentage-saving claim until equivalent scope, usage and commitment are confirmed.
+Triple Whale Free costs $0. For its paid plans, the published term is 12 months and the rate depends on annual GMV. HYROS advertises a Shopify starting figure of $199 per month and quotes based on tracked revenue. Augora's reviewed materials did not establish a numeric price. Compare the same store, period, attribution functions and service level before calculating savings. [Triple Whale pricing](https://www.triplewhale.com/pricing) · [HYROS Shopify offer](https://hyros.com/shopify) · [HYROS pricing](https://hyros.com/pricing-ai-tracking) · [Augora terms](https://augora.ai/legal/terms)
 
 The product must justify payment against free/native workflows. Low price is useful only if support and reliability remain sustainable.
 
@@ -26,6 +26,19 @@ Order billing definition: unique, non-test paid online-store orders first becomi
 Warn at 80% and 100%. Offer a seven-day grace period and a merchant-approved upgrade. If a hard limit is reached after grace, preserve financial order/refund ingestion, visibly restrict new optional behavioral collection, and show resulting coverage limits. Never silently sample purchases or imply full tracking after collection stops.
 
 Keep annual discounts out of launch economics until retention is measured. A later annual option must explicitly state the term and effective monthly amount.
+
+### What two stores would pay
+
+Assume one connected store, a steady $60 order value, 200 behavioral events per order and no promotions or returns for the illustrative GMV calculation. The merchant's actual figures and the vendor's GMV definition govern a quote.
+
+| Monthly workload | Implied annual store sales | Proposed monthly bill | Twelve months at that rate |
+|---|---:|---:|---:|
+| 300 orders and 60,000 events | $216,000 | $29 | $348 |
+| 1,500 orders and 300,000 events | $1,080,000 | $59 | $708 |
+
+A promotion could produce 450 orders and 120,000 events. That fits Starter's order band but exceeds its event allowance. Under the proposed policy, the owner can approve Growth at $59 or stay at $29 with the optional collection limit visible after grace. The financial history continues in both cases.
+
+For each profile, record the vendor's eligible revenue definition, quoted price, term, implementation charges, included destinations, event caps and renewal behavior. Ask HYROS for the applicable tracked revenue, which can differ from total store sales. Also time the same task with native Shopify and Triple Whale Free. A $29 subscription must earn its cost against that $0 incremental software baseline.
 
 ## How to reduce cost without damaging the core
 
@@ -76,7 +89,10 @@ Assume 60 Starter, 30 Growth, and 10 Scale stores. Each consumes its included al
 | Contribution before development and acquisition | $4,500 − $1,675 | **$2,825** |
 | Illustrative service margin | $2,825 / $4,500 | **62.8%** |
 
-The 5% reserve is not Shopify's published fee schedule. Verify the applicable processing/revenue-share rules before launch. These infrastructure allocations require load tests and provider quotes; $800 for core plus ingestion is not a validated 44-million-event production cost.
+Two published rates help calibrate the placeholders. Both are included within the corresponding budget lines above.
+
+- **Queue operations.** As one supplier example, Cloudflare Queues' paid tier includes one million operations per month and charges $0.40 per additional million. At one small message per event, written, read and deleted once, 44 million events imply 132 million operations and **$52.40** in queue usage. Retries add reads. Worker subscriptions, compute, databases, logs, storage and delivery still need pricing. [Cloudflare Queues pricing](https://developers.cloudflare.com/queues/platform/pricing/)
+- **Shopify fees.** At $4,500 billed, a 2.9% processing fee is **$130.50**. Shopify documents 0% revenue share on the first $1 million in qualifying lifetime app revenue across associated accounts for developers eligible for its standard schedule, and 15% above that threshold. Regional fees and tax may also apply. A fully above-threshold month would add **$675** in revenue share at this MRR. Reprice the reserve at that point. [Shopify App Store revenue share and fees](https://shopify.dev/docs/apps/launch/distribution/revenue-share)
 
 Excluded: founder/developer salary, customer acquisition, legal/privacy review, incident response projects, taxes, refunds/chargebacks, initial setup labor, and any premium API or data costs.
 
