@@ -8,7 +8,8 @@ test.describe("home page", () => {
 
 			await expect(
 				page.getByRole("heading", {
-					name: "Your revolutionary Next.js SaaS",
+					level: 1,
+					name: "Manage your team's workflow effortlessly",
 				}),
 			).toBeVisible();
 		});

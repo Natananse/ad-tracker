@@ -1,7 +1,7 @@
 {
 	"dependencies": {
 		"@paralleldrive/cuid2": "^2.3.1",
-		"@prisma/client": "^6.19.3",
+		"@prisma/client": "6.19.3",
 		"@repo/config": "workspace:*",
 		"drizzle-orm": "^0.45.2",
 		"drizzle-zod": "^0.8.3",
@@ -12,18 +12,18 @@
 		"@biomejs/biome": "^2.6.7",
 		"@repo/tsconfig": "workspace:*",
 		"@types/node": "^26.6.6",
-		"dotenv-cli": "^11.1.0",
 		"drizzle-kit": "^0.31.11",
-		"prisma": "^7.10.1",
-		"prisma-zod-generator": "^3.3.1"
+		"prisma": "6.19.3",
+		"prisma-zod-generator": "1.32.1"
 	},
 	"main": "./index.ts",
 	"name": "@repo/database",
 	"scripts": {
-		"generate": "prisma generate --no-hints --schema=./prisma/schema.prisma",
-		"push": "dotenv -c -e ../../.env -- prisma db push --skip-generate --schema=./prisma/schema.prisma",
-		"migrate": "dotenv -c -e ../../.env -- prisma migrate dev --schema=./prisma/schema.prisma",
-		"studio": "dotenv -c -e ../../.env -- prisma studio --schema=./prisma/schema.prisma",
+		"generate": "prisma generate --no-hints",
+		"push": "prisma db push --skip-generate",
+		"migrate": "prisma migrate dev",
+		"studio": "prisma studio",
+		"seed": "prisma db seed",
 		"type-check": "tsc --noEmit"
 	},
 	"types": "./**/.tsx",

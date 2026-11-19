@@ -1,316 +1,69 @@
-# The Ultimate Starter - Setup Guide
+# The Ultimate Starter
 
-A production-ready Next.js SaaS starter template with authentication, payments, organizations, and internationalization.
+A TypeScript SaaS monorepo with a Next.js App Router web app, PostgreSQL, Better Auth, and a Hono/oRPC API. The product research for the proposed Shopify ad tracker is in [prd/](prd/README.md).
 
-## Prerequisites
+## Local development
 
-- Node.js >= 20
-- Docker & Docker Compose
-- pnpm (package manager)
-
-## Quick Start
-
-### 1. Clone the Repository
+Install Node.js 24 LTS (or Node 22.13+ on the 22.x line), pnpm 10.14.0, Bash, and Docker with Compose v2 or later. Start your Docker engine. From the repository root run:
 
 ```bash
-git clone https://github.com/DevYon4s/The-Ultimate-Starter.git
-cd The-Ultimate-Starter
-```
-
-### 2. Install Dependencies
-
-```bash
-pnpm install
-```
-
-### 3. Set Up Docker Containers
-
-#### PostgreSQL Database
-
-```bash
-docker run -d \
-  --name postgres-nopass \
-  -p 3000:5432 \
-  -e POSTGRES_DB=mydb \
-  -e POSTGRES_USER=myuser \
-  -e POSTGRES_HOST_AUTH_METHOD=trust \
-  postgres
-```
-
-#### MailHog (Email Testing)
-
-```bash
-docker run -d \
-  --name mailhog \
-  -p 1025:1025 \
-  -p 8025:8025 \
-  mailhog/mailhog
-```
-
-### 4. Configure Environment Variables
-
-Copy `.env.local.example` to `.env.local` and update with the following values:
-
-```bash
-cp .env.local.example .env.local
-```
-
-Edit `.env.local` and set:
-
-```env
-# Database
-DATABASE_URL="postgresql://myuser:@localhost:3000/mydb"
-DIRECT_URL=""
-
-# Site URL
-NEXT_PUBLIC_SITE_URL="http://localhost:3001"
-
-# Authentication
-BETTER_AUTH_SECRET="your-random-secret-key-here"
-
-# MailHog Configuration
-EMAIL_SERVER_HOST="localhost"
-EMAIL_SERVER_PORT="1025"
-EMAIL_SERVER_USER=""
-EMAIL_SERVER_PASSWORD=""
-MAIL_FROM="noreply@localhost"
-
-# Optional: Social Login (GitHub, Google)
-GITHUB_CLIENT_ID="your-github-client-id"
-GITHUB_CLIENT_SECRET="your-github-client-secret"
-GOOGLE_CLIENT_ID="your-google-client-id"
-GOOGLE_CLIENT_SECRET="your-google-client-secret"
-```
-
-### 5. Initialize Database
-
-Generate Prisma client and push schema to database:
-
-```bash
-pnpm --filter @repo/database generate
-pnpm --filter @repo/database push
-```
-
-### 6. Start Development Server
-
-```bash
+pnpm run setup
 pnpm dev
 ```
 
-The application will be available at:
-- **Web App**: http://localhost:3001
-- **MailHog UI**: http://localhost:8025 (view sent emails)
+Use the full `pnpm run setup` spelling. Bare `pnpm setup` is pnpm's own shell setup command. [pnpm script execution](https://pnpm.io/10.x/cli/run)
 
-## Verification
+Setup creates a private `.env.local` from [.env.local.example](.env.local.example), generates local secrets, installs the locked dependencies, starts the containers, generates the Prisma client, applies the schema to the local database and seeds demo data. It is safe to rerun with the same environment and volume. A cold start depends on package and image download speed.
 
-### Test Authentication
+| Service | Local address | How to verify |
+|---|---|---|
+| Web | http://localhost:3000 | Visit the home page, then open `/auth/signup`. |
+| API | http://localhost:3000/api/health | Expect an HTTP 200 and the text `OK`. |
+| PostgreSQL | 127.0.0.1:5432 | Run `docker compose --env-file .env.local ps` and check the database health. |
+| Mailpit | http://localhost:8025 | Sign up, open the verification email here and follow its link. The app sends development mail through port 1025. |
 
-1. Navigate to http://localhost:3001/auth/signup
-2. Create a new account with a test email
-3. Check MailHog at http://localhost:8025 for the verification email
-4. Click the verification link to complete signup
+The app uses email/password locally. Google, GitHub, paid checkout and AI need their own credentials. Configure them in the root environment file when you use those features. Keep the same authentication secret across restarts to preserve existing sessions.
 
-### Test Email Sending
+## Common commands
 
-All emails sent during signup, password reset, and other auth flows will appear in MailHog:
-- SMTP Server: localhost:1025
-- Web UI: http://localhost:8025
+| Command | Purpose |
+|---|---|
+| `pnpm run setup` | Initialize or check the local environment and seed the database |
+| `pnpm dev` | Run the web app in development |
+| `docker compose --env-file .env.local stop` | Stop local services and retain the database volume |
+| `docker compose --env-file .env.local up -d --wait` | Start local services and wait for health checks |
+| `docker compose --env-file .env.local --profile redis up -d --wait` | Also start the optional local Redis service |
+| `pnpm --filter @repo/database generate` | Regenerate Prisma client and model validators |
+| `pnpm --filter @repo/database studio` | Inspect database records with Prisma Studio |
+| `pnpm lint` | Run Biome lint |
+| `pnpm --filter @repo/web type-check` | Type-check the web workspace |
+| `pnpm build` | Run the workspace production build |
+| `pnpm --filter @repo/web e2e:ci` | Install Playwright browsers and run the existing browser suite |
 
-## Docker Container Management
+## Configuration
 
-### View Running Containers
+The web server validates its environment during startup and reports the names of invalid settings. Set `DATABASE_URL` to the application's PostgreSQL connection. For schema commands against a pooled database, set `DIRECT_URL` to a direct connection. Local schema commands use `DATABASE_URL` when `DIRECT_URL` is empty. The local bootstrap targets the Compose development database. Use deployment-specific credentials and migration tooling for deployed databases.
 
-```bash
-docker ps
-```
+`config/index.ts` defines application features, locale defaults, session lifetimes, organization settings and plan definitions. `packages/payments/provider/index.ts` selects the active payment adapter. The default SMTP provider reads `EMAIL_SERVER_HOST`, `EMAIL_SERVER_PORT`, and `MAIL_FROM`. Set both SMTP authentication fields when your server requires them.
 
-### Stop Containers
+## Project structure
 
-```bash
-docker stop postgres-nopass mailhog
-```
-
-### Start Containers
-
-```bash
-docker start postgres-nopass mailhog
-```
-
-### Remove Containers
-
-```bash
-docker rm postgres-nopass mailhog
-```
-
-### View Container Logs
-
-```bash
-docker logs postgres-nopass
-docker logs mailhog
-```
-
-## Common Commands
-
-### Development
-
-```bash
-# Start dev server
-pnpm dev
-
-# Type check
-pnpm --filter @repo/web type-check
-
-# Lint code
-pnpm lint
-
-# Format code
-pnpm format
-```
-
-### Database
-
-```bash
-# Generate Prisma client
-pnpm --filter @repo/database generate
-
-# Push schema to database
-pnpm --filter @repo/database push
-
-# Run migrations
-pnpm --filter @repo/database migrate
-
-# Open Prisma Studio
-pnpm --filter @repo/database studio
-```
-
-### Build & Production
-
-```bash
-# Build all packages
-pnpm build
-
-# Start production server
-pnpm start
-
-# Clean build artifacts
-pnpm clean
-```
-
-## Project Structure
-
-```
-├── apps/web                 # Next.js application
-│   ├── app/                # App Router pages
-│   ├── modules/            # Feature modules
-│   └── content/            # MDX content (docs, blog, legal)
-├── packages/
-│   ├── api/               # API routes (oRPC)
-│   ├── auth/              # Authentication (better-auth)
-│   ├── database/          # Database schema (Prisma)
-│   ├── ai/                # AI integration
-│   ├── mail/              # Email templates & providers
-│   ├── payments/          # Payment providers
-│   ├── storage/           # File storage (S3)
-│   ├── i18n/              # Internationalization
-│   └── utils/             # Shared utilities
-├── config/                # Application configuration
-└── tooling/               # Build tools & configs
-```
-
-## Technology Stack
-
-- **Framework**: Next.js 15.5.7
-- **Language**: TypeScript 5.9.3
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: better-auth 1.4.5
-- **UI**: React 19.2.1 with Radix UI & Tailwind CSS
-- **API**: oRPC (type-safe RPC)
-- **Email**: MailHog (development) with nodemailer
-- **Build**: Turbo monorepo
-- **Linting**: Biome
-
-## Features
-
-- ✅ Multi-tenant SaaS with organizations
-- ✅ User & organization-level billing
-- ✅ Multiple authentication methods (email, social, passkeys, 2FA)
-- ✅ Payment processing (Stripe, LemonSqueezy, Polar, etc.)
-- ✅ Internationalization (i18n)
-- ✅ AI integration (Vercel AI SDK)
-- ✅ Email system with multiple providers
-- ✅ File storage (S3)
-- ✅ Admin panel
-- ✅ Marketing site with blog & docs
+| Path | Responsibility |
+|---|---|
+| [apps/web](apps/web) | Marketing, authentication, and SaaS routes, UI, MDX content, browser tests |
+| [packages/api](packages/api) | Hono HTTP routes, typed oRPC procedures, OpenAPI and webhooks |
+| [packages/auth](packages/auth) | Better Auth server and client configuration |
+| [packages/database](packages/database) | PostgreSQL schema, Prisma client and queries |
+| [packages](packages) | Shared payments, mail, AI, translations, logging and utilities |
+| [tooling](tooling) | Shared TypeScript, Tailwind and maintenance tooling |
+| [DECISIONS.md](DECISIONS.md) | Rationale for setup and compatibility choices |
+| [CHANGELOG.md](CHANGELOG.md) | Changes to the starter |
 
 ## Troubleshooting
 
-### Database Connection Error
-
-**Error**: `Can't reach database server`
-
-**Solution**: 
-- Verify PostgreSQL container is running: `docker ps | grep postgres`
-- Check DATABASE_URL in `.env.local` matches your Docker port mapping
-- Default: `postgresql://myuser:@localhost:3000/mydb`
-
-### Email Not Sending
-
-**Error**: `Could not send email`
-
-**Solution**:
-- Verify MailHog container is running: `docker ps | grep mailhog`
-- Check EMAIL_SERVER_HOST and EMAIL_SERVER_PORT in `.env.local`
-- Default: `localhost:1025`
-- View emails at http://localhost:8025
-
-### 422 Error on Signup
-
-**Error**: `POST /api/auth/sign-up/email 422`
-
-**Solution**:
-- Use a new email address (user might already exist)
-- Check email format is valid
-- Verify database is initialized: `pnpm --filter @repo/database push`
-
-### Port Already in Use
-
-**Error**: `Port 3000 is already in use`
-
-**Solution**:
-- Change Docker port mapping: `-p 3001:5432` instead of `-p 3000:5432`
-- Or kill the process using the port: `lsof -i :3000`
-
-## Environment Variables Reference
-
-See `.env.local.example` for all available configuration options including:
-- Social login providers (GitHub, Google)
-- Payment providers (Stripe, LemonSqueezy, Polar)
-- Analytics (Google Analytics, Mixpanel, Plausible)
-- Storage (S3)
-- AI (OpenAI)
-
-## Next Steps
-
-1. **Customize Configuration**: Edit `config/index.ts` for your app settings and refer to [MARKETING_VARIANTS_SETUP.md](./MARKETING_VARIANTS_SETUP.md)
-2. **Update Branding**: Replace logo and colors in `apps/web/public/images`
-3. **Configure Payment Plans**: Set up pricing in `config/index.ts`
-4. **Add Social Providers**: Configure GitHub and Google OAuth
-5. **Deploy**: Follow Next.js deployment guide for your hosting platform
-
-## Documentation
-
-- [Project Structure](./apps/web/README.md)
-- [API Documentation](./packages/api/README.md)
-- [Database Schema](./packages/database/README.md)
-- [Steering Docs](./.kiro/steering/README.md)
-
-## Support
-
-For issues and questions:
-1. Check the [Troubleshooting](#troubleshooting) section
-2. Review [Steering Documentation](./.kiro/steering/)
-3. Check [Migration Notes](./.kiro/steering/migration-notes.md) for recent changes
-
-## License
-
-MIT
+- **Docker cannot connect.** Run `docker info` and `docker compose version`. Start Docker Desktop or the Docker Engine service and ensure your selected Docker context points to it.
+- **PostgreSQL port in use.** Before the first setup, choose an unused database port such as 5433. Keep `POSTGRES_PORT`, the port in `DATABASE_URL`, and any explicit `DIRECT_URL` consistent. The web app uses port 3000.
+- **Database rejects a password.** A persistent PostgreSQL volume keeps the credentials it was initialized with. Restore the matching settings or change the database role's password deliberately. Rerunning setup preserves existing records.
+- **Verification email missing.** Check Mailpit on port 8025 and its container health. SMTP is on 1025. Ensure the site URL points to the same origin you use in your browser.
+- **Signup returns 422.** Read the form or response validation message, verify the submitted fields, and check whether the email already has an account. Use password reset for an existing account. A database startup failure should be investigated separately.
+- **Web port in use.** Set both `PORT` and `NEXT_PUBLIC_SITE_URL` in `.env.local` to the chosen web port, then restart `pnpm dev`.

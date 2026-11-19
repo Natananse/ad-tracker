@@ -5,6 +5,8 @@ import UserStart from "@saas/start/UserStart";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
+export const metadata = { title: "Dashboard" };
+
 export default async function AppStartPage() {
 	const session = await getSession();
 

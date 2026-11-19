@@ -2,6 +2,7 @@
 	"name": "supastarter-nextjs",
 	"private": true,
 	"scripts": {
+		"setup": "bash scripts/setup.sh",
 		"build": "dotenv -c -- turbo build",
 		"dev": "dotenv -c -- turbo dev --concurrency 15",
 		"start": "dotenv -c -- turbo start",
@@ -11,7 +12,7 @@
 		"format": "biome format . --write"
 	},
 	"engines": {
-		"node": ">=20.9.0"
+		"node": "^22.13.0 || >=24.0.0"
 	},
 	"packageManager": "pnpm@10.14.0",
 	"devDependencies": {

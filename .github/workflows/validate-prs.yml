@@ -4,9 +4,6 @@ on:
   pull_request:
     branches: [main]
 
-env:
-  DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
 jobs:
   lint:
     name: Lint code
@@ -23,16 +20,31 @@ jobs:
     name: Run e2e tests
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 3s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://postgres@localhost:5432/postgres
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
       - uses: pnpm/action-setup@v4
+      - name: Generate an ephemeral test secret
+        run: node -e 'require("node:fs").appendFileSync(process.env.GITHUB_ENV, "BETTER_AUTH_SECRET=" + require("node:crypto").randomBytes(32).toString("hex") + "\n")'
       - name: Install dependencies
-        run: pnpm install && pnpm --filter database generate
+        run: pnpm install --frozen-lockfile
+      - name: Prepare test database
+        run: pnpm --filter @repo/database generate && pnpm --filter @repo/database push
       - name: Run Playwright tests
-        run: pnpm --filter web e2e:ci
+        run: pnpm --filter @repo/web e2e:ci
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
