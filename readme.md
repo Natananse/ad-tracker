@@ -24,6 +24,14 @@ Setup creates a private `.env.local` from [.env.local.example](.env.local.exampl
 
 The app uses email/password locally. Google, GitHub, paid checkout and AI need their own credentials. Configure them in the root environment file when you use those features. Keep the same authentication secret across restarts to preserve existing sessions.
 
+## Campaign report
+
+After signing in, open **Campaign report** in the personal or organization sidebar. Load the example to try the comparison, or download the template and import daily campaign totals. The browser processes the file in memory. Export the filtered report to keep a copy before leaving the page.
+
+Use one row per date, channel, campaign and currency. Enter the date as `YYYY-MM-DD`, use an ISO currency code, and enter amounts in that currency's major units. Use sales after discounts and merchandise refunds, excluding taxes and shipping income. Costs cover product, fulfillment, payment fees and other variable costs. Leave unknown spend or costs blank and enter `0` for a confirmed zero.
+
+The report compares campaigns in one currency at a time. Net revenue is sales less refunds. ROAS divides total net revenue by total ad spend. Contribution subtracts spend and variable costs from net revenue. The example reproduces the two-campaign comparison in the [MVP requirements](prd/04-mvp-requirements.md).
+
 ## Common commands
 
 | Command | Purpose |
@@ -36,6 +44,7 @@ The app uses email/password locally. Google, GitHub, paid checkout and AI need t
 | `pnpm --filter @repo/database generate` | Regenerate Prisma client and model validators |
 | `pnpm --filter @repo/database studio` | Inspect database records with Prisma Studio |
 | `pnpm lint` | Run Biome lint |
+| `pnpm --filter @repo/web test:campaign-report` | Check CSV import, campaign calculations and export |
 | `pnpm --filter @repo/web type-check` | Type-check the web workspace |
 | `pnpm build` | Run the workspace production build |
 | `pnpm --filter @repo/web e2e:ci` | Install Playwright browsers and run the existing browser suite |

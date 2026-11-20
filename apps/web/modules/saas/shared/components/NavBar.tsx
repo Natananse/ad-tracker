@@ -7,6 +7,7 @@ import { Logo } from "@shared/components/Logo";
 import { cn } from "@ui/lib";
 import {
 	BotMessageSquareIcon,
+	ChartColumnIcon,
 	ChevronRightIcon,
 	HomeIcon,
 	PanelLeftCloseIcon,
@@ -56,6 +57,12 @@ export function NavBar({ onCollapsedChange }: { onCollapsedChange?: (collapsed: 
 			href: basePath,
 			icon: HomeIcon,
 			isActive: pathname === basePath,
+		},
+		{
+			label: t("app.menu.campaignReport"),
+			href: `${basePath}/reports/campaigns`,
+			icon: ChartColumnIcon,
+			isActive: pathname === `${basePath}/reports/campaigns`,
 		},
 		{
 			label: t("app.menu.aiChatbot"),
