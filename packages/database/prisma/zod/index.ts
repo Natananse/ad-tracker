@@ -3,7 +3,7 @@
  * Auto-generated. Do not edit.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 // File: TransactionIsolationLevel.schema.ts
 
 export const TransactionIsolationLevelSchema = z.enum(['ReadUncommitted', 'ReadCommitted', 'RepeatableRead', 'Serializable'])
@@ -36,7 +36,7 @@ export type VerificationScalarFieldEnum = z.infer<typeof VerificationScalarField
 
 // File: PasskeyScalarFieldEnum.schema.ts
 
-export const PasskeyScalarFieldEnumSchema = z.enum(['id', 'name', 'publicKey', 'userId', 'credentialID', 'counter', 'deviceType', 'backedUp', 'transports', 'createdAt'])
+export const PasskeyScalarFieldEnumSchema = z.enum(['id', 'name', 'publicKey', 'userId', 'credentialID', 'counter', 'deviceType', 'backedUp', 'transports', 'aaguid', 'createdAt'])
 
 export type PasskeyScalarFieldEnum = z.infer<typeof PasskeyScalarFieldEnumSchema>;
 
@@ -75,6 +75,18 @@ export type PurchaseScalarFieldEnum = z.infer<typeof PurchaseScalarFieldEnumSche
 export const AiChatScalarFieldEnumSchema = z.enum(['id', 'organizationId', 'userId', 'title', 'messages', 'createdAt', 'updatedAt'])
 
 export type AiChatScalarFieldEnum = z.infer<typeof AiChatScalarFieldEnumSchema>;
+
+// File: BlogPostScalarFieldEnum.schema.ts
+
+export const BlogPostScalarFieldEnumSchema = z.enum(['id', 'title', 'slug', 'excerpt', 'content', 'image', 'authorId', 'published', 'locale', 'tags', 'createdAt', 'updatedAt'])
+
+export type BlogPostScalarFieldEnum = z.infer<typeof BlogPostScalarFieldEnumSchema>;
+
+// File: ProductUpdateScalarFieldEnum.schema.ts
+
+export const ProductUpdateScalarFieldEnumSchema = z.enum(['id', 'title', 'content', 'type', 'authorId', 'published', 'createdAt', 'updatedAt'])
+
+export type ProductUpdateScalarFieldEnum = z.infer<typeof ProductUpdateScalarFieldEnumSchema>;
 
 // File: SortOrder.schema.ts
 
@@ -202,6 +214,7 @@ export const PasskeySchema = z.object({
   deviceType: z.string(),
   backedUp: z.boolean(),
   transports: z.string().nullish(),
+  aaguid: z.string().nullish(),
   createdAt: z.date().nullish(),
 });
 
@@ -278,8 +291,7 @@ export const PurchaseSchema = z.object({
   updatedAt: z.date(),
 });
 
-export type Purchase = z.infer<typeof PurchaseSchema>;
-
+export type PurchaseModel = z.infer<typeof PurchaseSchema>;
 
 // File: AiChat.schema.ts
 
@@ -294,4 +306,40 @@ export const AiChatSchema = z.object({
 });
 
 export type AiChatType = z.infer<typeof AiChatSchema>;
+
+
+// File: BlogPost.schema.ts
+
+export const BlogPostSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  slug: z.string(),
+  excerpt: z.string().nullish(),
+  content: z.unknown().refine((val) => { const getDepth = (obj: unknown, depth: number = 0): number => { if (depth > 10) return depth; if (obj === null || typeof obj !== 'object') return depth; const values = Object.values(obj as Record<string, unknown>); if (values.length === 0) return depth; return Math.max(...values.map(v => getDepth(v, depth + 1))); }; return getDepth(val) <= 10; }, "JSON nesting depth exceeds maximum of 10"),
+  image: z.string().nullish(),
+  authorId: z.string(),
+  published: z.boolean(),
+  locale: z.string().default("en"),
+  tags: z.array(z.string()),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+export type BlogPostType = z.infer<typeof BlogPostSchema>;
+
+
+// File: ProductUpdate.schema.ts
+
+export const ProductUpdateSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  content: z.unknown().refine((val) => { const getDepth = (obj: unknown, depth: number = 0): number => { if (depth > 10) return depth; if (obj === null || typeof obj !== 'object') return depth; const values = Object.values(obj as Record<string, unknown>); if (values.length === 0) return depth; return Math.max(...values.map(v => getDepth(v, depth + 1))); }; return getDepth(val) <= 10; }, "JSON nesting depth exceeds maximum of 10"),
+  type: z.string().default("product"),
+  authorId: z.string(),
+  published: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+export type ProductUpdateType = z.infer<typeof ProductUpdateSchema>;
 
