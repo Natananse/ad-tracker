@@ -453,12 +453,18 @@
 		}
 	},
 	"pricing": {
+		"billingPeriod": "Billing period",
+		"checkoutError": "Couldn’t open checkout. Please try again.",
+		"checkoutUnavailable": "Checkout unavailable",
+		"chooseNamedPlan": "Choose {plan}",
 		"choosePlan": "Choose plan",
 		"contactSales": "Contact sales",
+		"continueToApp": "Continue to app",
 		"description": "Choose the plan that works best for you.",
 		"getStarted": "Get started",
 		"month": "{count, plural, one {month} other {{count} months}}",
 		"monthly": "Monthly",
+		"openingCheckout": "Opening checkout…",
 		"products": {
 			"basic": {
 				"description": "Perfect to small teams.",
@@ -504,6 +510,8 @@
 		},
 		"purchase": "Purchase",
 		"recommended": "Recommended",
+		"signUp": "Sign up",
+		"startFree": "Start for free",
 		"subscribe": "Subscribe",
 		"title": "Pricing",
 		"trialPeriod": "{days} {days, plural, one {day} other {days}} free trial",

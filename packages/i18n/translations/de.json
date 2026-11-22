@@ -449,12 +449,18 @@
 		}
 	},
 	"pricing": {
+		"billingPeriod": "Abrechnungszeitraum",
+		"checkoutError": "Die Kasse konnte nicht geöffnet werden. Bitte versuche es erneut.",
+		"checkoutUnavailable": "Kasse nicht verfügbar",
+		"chooseNamedPlan": "{plan} auswählen",
 		"choosePlan": "Plan auswählen",
 		"contactSales": "Vertrieb kontaktieren",
+		"continueToApp": "Weiter zur App",
 		"description": "Wähle das passende Paket für dich aus.",
 		"getStarted": "Jetzt loslegen",
 		"month": "Monat",
 		"monthly": "Monatlich",
+		"openingCheckout": "Kasse wird geöffnet…",
 		"products": {
 			"basic": {
 				"description": "Perfekt für den Einstieg",
@@ -500,6 +506,8 @@
 		},
 		"purchase": "Kaufen",
 		"recommended": "Empfohlen",
+		"signUp": "Registrieren",
+		"startFree": "Kostenlos starten",
 		"subscribe": "Abonnieren",
 		"title": "Preise",
 		"trialPeriod": "{days} {days, plural, one {Tag} other {Tage}} kostenlose Testphase",

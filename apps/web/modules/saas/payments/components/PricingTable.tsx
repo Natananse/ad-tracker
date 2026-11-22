@@ -1,26 +1,33 @@
 "use client";
 import { LocaleLink } from "@i18n/routing";
 import { type Config, config } from "@repo/config";
+import { BillingPeriodSwitch } from "@saas/payments/components/BillingPeriodSwitch";
 import { usePlanData } from "@saas/payments/hooks/plan-data";
-import type { PlanId } from "@saas/payments/types";
+import { Spinner } from "@shared/components/Spinner";
 import { useLocaleCurrency } from "@shared/hooks/locale-currency";
-import { useRouter } from "@shared/hooks/router";
 import { orpc } from "@shared/lib/orpc-query-utils";
 import { useMutation } from "@tanstack/react-query";
-import { Button } from "@ui/components/button";
-import { Tabs, TabsList, TabsTrigger } from "@ui/components/tabs";
+import { buttonVariants } from "@ui/components/button";
 import { cn } from "@ui/lib";
 import {
 	ArrowRightIcon,
 	BadgePercentIcon,
 	CheckIcon,
-	PhoneIcon,
 	StarIcon,
 } from "lucide-react";
+import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import { useState } from "react";
+import { toast } from "sonner";
 
 const plans = config.payments.plans as Config["payments"]["plans"];
+
+const actionArrow = (
+	<ArrowRightIcon
+		aria-hidden="true"
+		className="size-4 shrink-0 motion-safe:transition-transform motion-safe:group-hover/plan:translate-x-1 motion-safe:group-focus-within/plan:translate-x-1"
+	/>
+);
 
 export function PricingTable({
 	className,
@@ -35,51 +42,19 @@ export function PricingTable({
 }) {
 	const t = useTranslations();
 	const format = useFormatter();
-	const router = useRouter();
+	const needsSignup = !(userId || organizationId);
 	const localeCurrency = useLocaleCurrency();
-	const [loading, setLoading] = useState<PlanId | false>(false);
 	const [interval, setInterval] = useState<"month" | "year">("month");
 
 	const { planData } = usePlanData();
 
-	const createCheckoutLinkMutation = useMutation(
-		orpc.payments.createCheckoutLink.mutationOptions(),
+	const checkout = useMutation(
+		orpc.payments.createCheckoutLink.mutationOptions({
+			onSuccess: ({ checkoutLink }) =>
+				window.location.assign(checkoutLink),
+			onError: () => toast.error(t("pricing.checkoutError")),
+		}),
 	);
-
-	const onSelectPlan = async (planId: PlanId, productId?: string) => {
-		if (!(userId || organizationId)) {
-			router.push("/auth/signup");
-			return;
-		}
-
-		const plan = plans[planId];
-		const price = plan.prices?.find(
-			(price) => price.productId === productId,
-		);
-
-		if (!price) {
-			return;
-		}
-
-		setLoading(planId);
-
-		try {
-			const { checkoutLink } =
-				await createCheckoutLinkMutation.mutateAsync({
-					type:
-						price.type === "one-time" ? "one-time" : "subscription",
-					productId: price.productId,
-					organizationId,
-					redirectUrl: window.location.href,
-				});
-
-			window.location.href = checkoutLink;
-		} catch (error) {
-			console.error(error);
-		} finally {
-			setLoading(false);
-		}
-	};
 
 	const filteredPlans = Object.entries(plans).filter(
 		([planId]) =>
@@ -87,29 +62,23 @@ export function PricingTable({
 	);
 
 	const hasSubscriptions = filteredPlans.some(([_, plan]) =>
-		plan.prices?.some((price) => price.type === "recurring"),
+		plan.prices?.some(
+			(price) =>
+				!price.hidden &&
+				price.type === "recurring" &&
+				price.currency === localeCurrency,
+		),
 	);
 
 	return (
 		<div className={cn("@container", className)}>
 			{hasSubscriptions && (
-				<div className="mb-6 flex @xl:justify-center">
-					<Tabs
+				<div className="mb-8 flex @xl:justify-center">
+					<BillingPeriodSwitch
 						value={interval}
-						onValueChange={(value) =>
-							setInterval(value as typeof interval)
-						}
-						data-test="price-table-interval-tabs"
-					>
-						<TabsList className="border-foreground/10">
-							<TabsTrigger value="month">
-								{t("pricing.monthly")}
-							</TabsTrigger>
-							<TabsTrigger value="year">
-								{t("pricing.yearly")}
-							</TabsTrigger>
-						</TabsList>
-					</Tabs>
+						onChange={setInterval}
+						disabled={checkout.isPending}
+					/>
 				</div>
 			)}
 			<div
@@ -119,184 +88,238 @@ export function PricingTable({
 					"@4xl:grid-cols-4": filteredPlans.length >= 4,
 				})}
 			>
-				{filteredPlans
-					.filter(([planId]) => planId !== activePlanId)
-					.map(([planId, plan]) => {
-						const { isFree, isEnterprise, prices, recommended } =
-							plan;
-						const { title, description, features } =
-							planData[planId as keyof typeof planData];
+				{filteredPlans.map(([planId, plan]) => {
+					const { isFree, isEnterprise, prices, recommended } = plan;
+					const { title, description, features } =
+						planData[planId as keyof typeof planData];
 
-						let price = prices?.find(
-							(price) =>
-								!price.hidden &&
-								(price.type === "one-time" ||
-									price.interval === interval) &&
-								price.currency === localeCurrency,
-						);
+					let price = prices?.find(
+						(price) =>
+							!price.hidden &&
+							(price.type === "one-time" ||
+								price.interval === interval) &&
+							price.currency === localeCurrency,
+					);
 
-						if (isFree) {
-							price = {
-								amount: 0,
-								currency: localeCurrency,
-								interval,
-								productId: "",
-								type: "recurring",
-							};
-						}
+					if (isFree) {
+						price = {
+							amount: 0,
+							currency: localeCurrency,
+							interval,
+							productId: "",
+							type: "recurring",
+						};
+					}
 
-						if (!(price || isEnterprise)) {
-							return null;
-						}
+					if (!(price || isEnterprise)) {
+						return null;
+					}
 
-						return (
-							<div
-								key={planId}
-								className={cn("rounded-3xl border p-6", {
-									"border-2 border-primary": recommended,
-								})}
-								data-test="price-table-plan"
-							>
-								<div className="flex h-full flex-col justify-between gap-4">
-									<div>
-										{recommended && (
-											<div className="-mt-9 flex justify-center">
-												<div className="mb-2 flex h-6 w-auto items-center gap-1.5 rounded-full bg-primary px-2 py-1 font-semibold text-primary-foreground text-xs">
-													<StarIcon className="size-3" />
-													{t("pricing.recommended")}
-												</div>
+					const openingCheckout =
+						checkout.isPending &&
+						checkout.variables.productId === price?.productId;
+					const canCheckout = Boolean(price?.productId);
+					const interactive =
+						isEnterprise ||
+						needsSignup ||
+						isFree ||
+						(canCheckout && !checkout.isPending);
+					const actionClass = cn(
+						buttonVariants({ size: "lg", variant: null }),
+						"mt-5 h-auto min-h-11 w-full justify-between gap-2 rounded-xl px-4 py-2.5 text-start text-sm",
+						"motion-safe:transition-[background-color,border-color,color,scale] motion-safe:active:scale-[.98] motion-reduce:transition-none",
+						"[&>svg]:mr-0 [&>svg]:opacity-100",
+						recommended
+							? "border-secondary bg-secondary text-secondary-foreground"
+							: "border-input bg-card text-card-foreground",
+						interactive &&
+							"group-hover/plan:border-indigo-700 group-hover/plan:bg-indigo-700 group-hover/plan:text-white group-focus-within/plan:border-indigo-700 group-focus-within/plan:bg-indigo-700 group-focus-within/plan:text-white dark:group-hover/plan:border-indigo-300 dark:group-hover/plan:bg-indigo-300 dark:group-hover/plan:text-indigo-950 dark:group-focus-within/plan:border-indigo-300 dark:group-focus-within/plan:bg-indigo-300 dark:group-focus-within/plan:text-indigo-950",
+					);
+
+					return (
+						<div
+							key={planId}
+							className={cn(
+								"relative rounded-3xl border bg-card p-6 text-card-foreground",
+								"motion-safe:transition-[border-color,box-shadow,translate] motion-safe:duration-200",
+								recommended && "border-primary/70 shadow-sm",
+								interactive &&
+									"group/plan focus-within:border-primary focus-within:shadow-md hover:border-primary hover:shadow-md motion-safe:hover:-translate-y-1",
+							)}
+							data-test="price-table-plan"
+						>
+							<div className="flex h-full flex-col justify-between gap-4">
+								<div>
+									{recommended && (
+										<div className="absolute inset-x-0 top-0 flex -translate-y-1/2 justify-center">
+											<div className="flex h-6 w-auto items-center gap-1.5 rounded-full bg-primary px-2 py-1 font-semibold text-primary-foreground text-xs">
+												<StarIcon className="size-3" />
+												{t("pricing.recommended")}
 											</div>
+										</div>
+									)}
+									<h3
+										className={cn(
+											"my-0 font-semibold text-2xl",
+											{
+												"font-bold text-primary":
+													recommended,
+											},
 										)}
-										<h3
-											className={cn(
-												"my-0 font-semibold text-2xl",
-												{
-													"font-bold text-primary":
-														recommended,
-												},
-											)}
-										>
-											{title}
-										</h3>
-										{description && (
-											<div className="prose mt-2 text-foreground/60 text-sm">
-												{description}
-											</div>
-										)}
+									>
+										{title}
+									</h3>
+									{description && (
+										<div className="prose mt-2 text-foreground/60 text-sm">
+											{description}
+										</div>
+									)}
 
-										{!!features?.length && (
-											<ul className="mt-4 grid list-none gap-2 text-sm">
-												{features.map(
-													(feature, key) => (
-														<li
-															key={key}
-															className="flex items-center justify-start"
-														>
-															<CheckIcon className="mr-2 size-4 text-primary" />
-															<span>
-																{feature}
-															</span>
-														</li>
-													),
-												)}
-											</ul>
-										)}
+									{!!features?.length && (
+										<ul className="mt-4 grid list-none gap-2 text-sm">
+											{features.map((feature, key) => (
+												<li
+													key={key}
+													className="flex items-center justify-start"
+												>
+													<CheckIcon className="mr-2 size-4 text-primary" />
+													<span>{feature}</span>
+												</li>
+											))}
+										</ul>
+									)}
 
-										{price &&
-											"trialPeriodDays" in price &&
-											price.trialPeriodDays && (
-												<div className="mt-4 flex items-center justify-start font-medium text-primary text-sm opacity-80">
-													<BadgePercentIcon className="mr-2 size-4" />
-													{t("pricing.trialPeriod", {
-														days: price.trialPeriodDays,
-													})}
-												</div>
-											)}
-									</div>
-
-									<div>
-										{price && (
-											<strong
-												className="block font-medium text-2xl lg:text-3xl"
-												data-test="price-table-plan-price"
-											>
-												{format.number(price.amount, {
-													style: "currency",
-													currency: price.currency,
+									{price &&
+										"trialPeriodDays" in price &&
+										price.trialPeriodDays && (
+											<div className="mt-4 flex items-center justify-start font-medium text-primary text-sm opacity-80">
+												<BadgePercentIcon className="mr-2 size-4" />
+												{t("pricing.trialPeriod", {
+													days: price.trialPeriodDays,
 												})}
-												{"interval" in price && (
+											</div>
+										)}
+								</div>
+
+								<div>
+									{price && (
+										<strong
+											className="block font-medium text-2xl lg:text-3xl"
+											data-test="price-table-plan-price"
+										>
+											{format.number(price.amount, {
+												style: "currency",
+												currency: price.currency,
+											})}
+											{"interval" in price && (
+												<span className="font-normal text-xs opacity-60">
+													{" / "}
+													{interval === "month"
+														? t("pricing.month", {
+																count:
+																	price.intervalCount ??
+																	1,
+															})
+														: t("pricing.year", {
+																count:
+																	price.intervalCount ??
+																	1,
+															})}
+												</span>
+											)}
+											{organizationId &&
+												"seatBased" in price &&
+												price.seatBased && (
 													<span className="font-normal text-xs opacity-60">
 														{" / "}
-														{interval === "month"
-															? t(
-																	"pricing.month",
-																	{
-																		count:
-																			price.intervalCount ??
-																			1,
-																	},
-																)
-															: t(
-																	"pricing.year",
-																	{
-																		count:
-																			price.intervalCount ??
-																			1,
-																	},
-																)}
+														{t("pricing.perSeat")}
 													</span>
 												)}
-												{organizationId &&
-													"seatBased" in price &&
-													price.seatBased && (
-														<span className="font-normal text-xs opacity-60">
-															{" / "}
-															{t(
-																"pricing.perSeat",
-															)}
-														</span>
-													)}
-											</strong>
-										)}
+										</strong>
+									)}
 
-										{isEnterprise ? (
-											<Button
-												className="mt-4 w-full"
-												variant="light"
-												asChild
-											>
-												<LocaleLink href="/contact">
-													<PhoneIcon className="mr-2 size-4" />
-													{t("pricing.contactSales")}
-												</LocaleLink>
-											</Button>
-										) : (
-											<Button
-												className="mt-4 w-full"
-												variant={
-													recommended
-														? "primary"
-														: "secondary"
+									{isEnterprise ? (
+										<LocaleLink
+											className={actionClass}
+											href="/contact"
+										>
+											{t("pricing.contactSales")}
+											{actionArrow}
+										</LocaleLink>
+									) : needsSignup || isFree ? (
+										<Link
+											className={actionClass}
+											href={
+												needsSignup
+													? "/auth/signup"
+													: "/app"
+											}
+										>
+											<span>
+												{needsSignup
+													? t(
+															isFree
+																? "pricing.startFree"
+																: "pricing.signUp",
+														)
+													: t(
+															"pricing.continueToApp",
+														)}
+												<span className="sr-only">
+													{" "}
+													({title})
+												</span>
+											</span>
+											{actionArrow}
+										</Link>
+									) : (
+										<button
+											type="button"
+											className={actionClass}
+											disabled={
+												!canCheckout ||
+												checkout.isPending
+											}
+											aria-busy={openingCheckout}
+											onClick={() => {
+												if (!price?.productId) {
+													return;
 												}
-												onClick={() =>
-													onSelectPlan(
-														planId as PlanId,
-														price?.productId,
-													)
-												}
-												loading={loading === planId}
-											>
-												{userId || organizationId
-													? t("pricing.choosePlan")
-													: t("pricing.getStarted")}
-												<ArrowRightIcon className="ml-2 size-4" />
-											</Button>
-										)}
-									</div>
+												checkout.mutate({
+													type:
+														price.type ===
+														"recurring"
+															? "subscription"
+															: "one-time",
+													productId: price.productId,
+													organizationId,
+													redirectUrl:
+														window.location.href,
+												});
+											}}
+										>
+											{openingCheckout
+												? t("pricing.openingCheckout")
+												: canCheckout
+													? t(
+															"pricing.chooseNamedPlan",
+															{ plan: title },
+														)
+													: t(
+															"pricing.checkoutUnavailable",
+														)}
+											{openingCheckout ? (
+												<Spinner className="text-inherit motion-reduce:animate-none" />
+											) : (
+												canCheckout && actionArrow
+											)}
+										</button>
+									)}
 								</div>
 							</div>
-						);
-					})}
+						</div>
+					);
+				})}
 			</div>
 		</div>
 	);

@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "generatorVersion": "0.0.0",
-  "generatedAt": "2026-11-20T19:01:03.100Z",
+  "generatedAt": "2026-11-22T17:37:54.273Z",
   "outputPath": "/home/natnael/ad tracking saas/adstracking/packages/database/prisma/zod",
   "files": [
     "index.ts"
