@@ -1,6 +1,6 @@
-# The Ultimate Starter
+# AdsTracking
 
-A TypeScript SaaS monorepo with a Next.js App Router web app, PostgreSQL, Better Auth, and a Hono/oRPC API. The product research for the proposed Shopify ad tracker is in [prd/](prd/README.md).
+A workspace for measuring Shopify campaign attribution and profitability, built with Next.js, PostgreSQL, Better Auth, and a Hono/oRPC API. The [product research](prd/README.md) covers the target merchants, calculations, and planned integrations.
 
 ## Local development
 
@@ -26,11 +26,25 @@ The app uses email/password locally. Google, GitHub, paid checkout and AI need t
 
 ## Campaign report
 
-After signing in, open **Campaign report** in the personal or organization sidebar. Load the example to try the comparison, or download the template and import daily campaign totals. The browser processes the file in memory. Export the filtered report to keep a copy before leaving the page.
+Open `/demo` for the public sample. After signing in, choose **Campaign report** in the personal or organization sidebar. Preview a CSV, then save it to the workspace to reopen it later. Organization members can read shared reports; owners and admins can replace them. Concurrent saves use a revision check.
+
+For first-click or last-click reporting, open **Order attribution** and import a normalized JSON snapshot of orders, refunds, eligible clicks and daily spend. Choose a 7- or 28-day lookback, inspect order evidence, then save. The API computes the result and stores the normalized source with the report so it can be recalculated. [Order snapshot format and example](packages/api/modules/tracking/attribution/README.md)
+
+The source of data in this version is file import. Apply the updated schema to a development PostgreSQL database using `pnpm --filter @repo/database generate` and `pnpm --filter @repo/database push` before running the report. Fresh installations use the existing setup command.
 
 Use one row per date, channel, campaign and currency. Enter the date as `YYYY-MM-DD`, use an ISO currency code, and enter amounts in that currency's major units. Use sales after discounts and merchandise refunds, excluding taxes and shipping income. Costs cover product, fulfillment, payment fees and other variable costs. Leave unknown spend or costs blank and enter `0` for a confirmed zero.
 
 The report compares campaigns in one currency at a time. Net revenue is sales less refunds. ROAS divides total net revenue by total ad spend. Contribution subtracts spend and variable costs from net revenue. The example reproduces the two-campaign comparison in the [MVP requirements](prd/04-mvp-requirements.md).
+
+### Reporting backend
+
+| Authenticated API | Behavior |
+| --- | --- |
+| `tracking.attributeOrders` | Preview allocations, daily campaign totals, and the credited click for each order. |
+| `tracking.getReport` | Read the current personal or organization report, its revision, and the viewer's edit permission. |
+| `tracking.saveReport` | Atomically replace daily facts from CSV rows or recompute them from an order snapshot. A stale revision returns a conflict. |
+
+PostgreSQL stores one `campaign_report` per workspace. Each owns `campaign_daily_fact` rows keyed by date, channel, campaign, and currency. Money is stored in integer minor units. Order-based reports also retain the attribution rule, lookback window, normalized order data, and eligible clicks. Both the public demo and authenticated reports use the same allocation logic.
 
 ## Common commands
 

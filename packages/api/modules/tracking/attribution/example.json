@@ -1,0 +1,58 @@
+{
+	"currency": "USD",
+	"orders": [
+		{
+			"id": "order-101",
+			"paidAt": "2026-11-03T10:00:00Z",
+			"sales": 100000,
+			"costs": 65000,
+			"refunds": [{ "id": "refund-101-a", "amount": 20000 }],
+			"clicks": [
+				{
+					"id": "click-11",
+					"at": "2026-10-18T16:30:00Z",
+					"channel": "Google",
+					"campaign": "Shopping",
+					"eligible": true
+				},
+				{
+					"id": "click-12",
+					"at": "2026-11-01T09:30:00Z",
+					"channel": "Meta",
+					"campaign": "Prospecting",
+					"eligible": true
+				}
+			]
+		},
+		{
+			"id": "order-102",
+			"paidAt": "2026-11-03T12:00:00Z",
+			"sales": 70000,
+			"costs": 32000,
+			"refunds": [],
+			"clicks": [
+				{
+					"id": "click-21",
+					"at": "2026-11-02T17:00:00Z",
+					"channel": "Google",
+					"campaign": "Shopping",
+					"eligible": true
+				}
+			]
+		}
+	],
+	"spend": [
+		{
+			"date": "2026-11-03",
+			"channel": "Meta",
+			"campaign": "Prospecting",
+			"amount": 20000
+		},
+		{
+			"date": "2026-11-03",
+			"channel": "Google",
+			"campaign": "Shopping",
+			"amount": 20000
+		}
+	]
+}

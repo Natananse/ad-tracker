@@ -469,7 +469,7 @@
 			"basic": {
 				"description": "Perfect to small teams.",
 				"features": {
-					"anotherFeature": "Another amazing feature",
+					"campaignReports": "Campaign profitability reports",
 					"limitedSupport": "Limited support"
 				},
 				"title": "Basic"
@@ -485,7 +485,7 @@
 			"free": {
 				"description": "Start for free",
 				"features": {
-					"anotherFeature": "Another amazing feature",
+					"campaignReports": "Campaign profitability reports",
 					"limitedSupport": "Limited support"
 				},
 				"title": "Free"
@@ -501,7 +501,7 @@
 			"pro": {
 				"description": "Best for teams",
 				"features": {
-					"anotherFeature": "Another amazing feature",
+					"campaignReports": "Campaign profitability reports",
 					"fiveMembers": "Up to 5 members",
 					"fullSupport": "Full support"
 				},

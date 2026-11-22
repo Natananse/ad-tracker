@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
 	buildCampaignReport,
+	campaignOverview,
 	formatMoney,
 	makeReportCsv,
 	parseCampaignCsv,
@@ -28,6 +29,31 @@ test("the example reproduces the product brief after refunds and costs", () => {
 			[70000, 20000, 3.5, 18000],
 		],
 	);
+});
+
+test("overview weights return by spend and marks partial totals incomplete", () => {
+	const rows = parseCampaignCsv(
+		csv(
+			"2026-11-01,Meta,First,USD,80,20,20,30",
+			"2026-11-01,Meta,Second,USD,300,0,50,30",
+			"2026-11-01,Google,Other,EUR,100,0,0,0",
+		),
+	);
+	assert.deepEqual(campaignOverview(buildCampaignReport(rows, filter)), {
+		netRevenue: 36000,
+		spend: 7000,
+		contribution: 23000,
+		roas: 36000 / 7000,
+	});
+	rows[0].costs = null;
+	assert.equal(
+		campaignOverview(buildCampaignReport(rows, filter)).contribution,
+		null,
+	);
+	rows[0].spend = null;
+	const unknown = campaignOverview(buildCampaignReport(rows, filter));
+	assert.equal(unknown.spend, null);
+	assert.equal(unknown.roas, null);
 });
 
 test("comparison uses summed amounts, inclusive dates and one currency", () => {

@@ -1,337 +1,71 @@
 "use client";
 
-import { PageHeader } from "@saas/shared/components/PageHeader";
+import { ORPCError } from "@orpc/client";
+import { orpc } from "@shared/lib/orpc-query-utils";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Alert } from "@ui/components/alert";
 import { Button } from "@ui/components/button";
 import { Card } from "@ui/components/card";
-import { Input } from "@ui/components/input";
-import { Label } from "@ui/components/label";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@ui/components/table";
-import { DownloadIcon, UploadIcon } from "lucide-react";
+import { UploadIcon } from "lucide-react";
 import { useLocale } from "next-intl";
-import { type ChangeEvent, useMemo, useRef, useState } from "react";
+import { type ChangeEvent, useRef, useState } from "react";
 import {
-	buildCampaignReport,
 	type CampaignDay,
-	formatMoney,
-	makeReportCsv,
 	parseCampaignCsv,
 	SAMPLE_CSV,
 	TEMPLATE_CSV,
 } from "../lib/campaign-report";
+import { downloadReportFile } from "../lib/download-report-file";
+import { ReportResults } from "./CampaignReportResults";
+import {
+	AttributionEvidence,
+	type AttributionSource,
+	OrderAttributionImport,
+	type OrderEvidence,
+} from "./OrderAttributionImport";
 
-const pageSize = 50;
-const maxFileBytes = 2 * 1024 * 1024;
-
-function downloadCsv(text: string, filename: string) {
-	const url = URL.createObjectURL(
-		new Blob([text], { type: "text/csv;charset=utf-8" }),
-	);
-	const link = document.createElement("a");
-	link.href = url;
-	link.download = filename;
-	document.body.appendChild(link);
-	link.click();
-	link.remove();
-	window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+interface ReportPreview {
+	name: string;
+	sample: boolean;
+	rows: CampaignDay[];
+	attributionSource: AttributionSource | null;
+	attribution: OrderEvidence | null;
+	expectedRevision: string | null;
 }
 
-function ReportResults({ rows }: { rows: CampaignDay[] }) {
-	const locale = useLocale();
-	const ranges = useMemo(() => {
-		const byCurrency = new Map<string, { first: string; last: string }>();
-		for (const { currency, date } of rows) {
-			const range = byCurrency.get(currency);
-			if (!range) {
-				byCurrency.set(currency, { first: date, last: date });
-			} else {
-				if (date < range.first) {
-					range.first = date;
-				}
-				if (date > range.last) {
-					range.last = date;
-				}
-			}
-		}
-		return byCurrency;
-	}, [rows]);
-	const currencies = Array.from(ranges.keys()).sort();
-	const [filter, setFilter] = useState({
-		currency: currencies[0],
-		start: "",
-		end: "",
-	});
-	const [page, setPage] = useState(0);
-	const invalidDates = Boolean(
-		filter.start && filter.end && filter.start > filter.end,
-	);
-	const summaries = useMemo(
-		() => (invalidDates ? [] : buildCampaignReport(rows, filter)),
-		[rows, filter, invalidDates],
-	);
-	const ratioFormat = new Intl.NumberFormat(locale, {
-		maximumFractionDigits: 2,
-	});
-	const range = ranges.get(filter.currency);
-	const dateFormat = new Intl.DateTimeFormat(locale, {
-		dateStyle: "medium",
-		timeZone: "UTC",
-	});
-
-	function money(amount: number | null, missing = "Unknown") {
-		return amount === null
-			? missing
-			: formatMoney(amount, filter.currency, locale);
-	}
-
-	function changeFilter(field: keyof typeof filter, value: string) {
-		setFilter((previous) => ({ ...previous, [field]: value }));
-		setPage(0);
-	}
-
-	return (
-		<Card className="w-full min-w-0 max-w-full overflow-hidden">
-			<div className="space-y-5 p-4 sm:p-6">
-				<div className="flex flex-wrap items-center justify-between gap-3">
-					<h2 className="font-semibold text-xl">
-						Campaign performance
-					</h2>
-					<Button
-						type="button"
-						variant="outline"
-						disabled={summaries.length === 0}
-						onClick={() =>
-							downloadCsv(
-								makeReportCsv(summaries, filter),
-								`campaign-report-${filter.currency}.csv`,
-							)
-						}
-					>
-						<DownloadIcon className="size-4" aria-hidden="true" />
-						Export report
-					</Button>
-				</div>
-				<div className="grid gap-3 sm:grid-cols-3">
-					<div className="space-y-1.5">
-						<Label htmlFor="report-currency">Currency</Label>
-						<select
-							id="report-currency"
-							value={filter.currency}
-							onChange={(event) =>
-								changeFilter("currency", event.target.value)
-							}
-							className="h-9 w-full rounded-md border border-input bg-card px-3 shadow-xs focus-visible:ring-1 focus-visible:ring-ring"
-						>
-							{currencies.map((currency) => (
-								<option key={currency}>{currency}</option>
-							))}
-						</select>
-					</div>
-					<div className="space-y-1.5">
-						<Label htmlFor="report-start">From</Label>
-						<Input
-							id="report-start"
-							type="date"
-							value={filter.start}
-							max={filter.end || undefined}
-							aria-invalid={invalidDates}
-							aria-describedby={
-								invalidDates ? "report-date-error" : undefined
-							}
-							onChange={(event) =>
-								changeFilter("start", event.target.value)
-							}
-						/>
-					</div>
-					<div className="space-y-1.5">
-						<Label htmlFor="report-end">Through</Label>
-						<Input
-							id="report-end"
-							type="date"
-							value={filter.end}
-							min={filter.start || undefined}
-							aria-invalid={invalidDates}
-							aria-describedby={
-								invalidDates ? "report-date-error" : undefined
-							}
-							onChange={(event) =>
-								changeFilter("end", event.target.value)
-							}
-						/>
-					</div>
-				</div>
-				{range && (
-					<p className="text-muted-foreground text-sm">
-						Available dates for {filter.currency} ·{" "}
-						{dateFormat.formatRange(
-							new Date(range.first),
-							new Date(range.last),
-						)}
-					</p>
-				)}
-				{invalidDates ? (
-					<Alert id="report-date-error" variant="error">
-						Choose an end date on or after the start date.
-					</Alert>
-				) : (
-					<p role="status" className="text-muted-foreground text-sm">
-						{summaries.length > 0
-							? `${summaries.length.toLocaleString(locale)} ${summaries.length === 1 ? "campaign" : "campaigns"} in ${filter.currency}`
-							: "No campaign data matches these dates and currency."}
-					</p>
-				)}
-			</div>
-			{summaries.length > 0 && (
-				<>
-					<Table className="min-w-[56rem]">
-						<caption className="sr-only">
-							Campaign performance in {filter.currency}
-						</caption>
-						<TableHeader>
-							<TableRow className="bg-muted/60">
-								<TableHead scope="col">Campaign</TableHead>
-								{[
-									"Sales",
-									"Refunds",
-									"Net revenue",
-									"Ad spend",
-									"ROAS",
-									"Variable costs",
-									"Contribution after ads",
-								].map((label) => (
-									<TableHead
-										key={label}
-										scope="col"
-										className="text-right"
-									>
-										{label}
-									</TableHead>
-								))}
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{summaries
-								.slice(page * pageSize, (page + 1) * pageSize)
-								.map((summary) => (
-									<TableRow
-										key={JSON.stringify([
-											summary.channel,
-											summary.campaign,
-										])}
-										className="tabular-nums"
-									>
-										<th
-											scope="row"
-											className="max-w-xs break-words p-4 text-left font-medium"
-										>
-											{summary.campaign}
-											<span className="block text-muted-foreground text-xs">
-												{summary.channel} ·{" "}
-												{summary.days.toLocaleString(
-													locale,
-												)}{" "}
-												{summary.days === 1
-													? "day"
-													: "days"}
-											</span>
-										</th>
-										<TableCell className="text-right">
-											{money(summary.sales)}
-										</TableCell>
-										<TableCell className="text-right">
-											{money(summary.refunds)}
-										</TableCell>
-										<TableCell className="text-right">
-											{money(summary.netRevenue)}
-										</TableCell>
-										<TableCell className="text-right">
-											{money(summary.spend)}
-										</TableCell>
-										<TableCell className="text-right">
-											{summary.roas === null
-												? "N/A"
-												: `${ratioFormat.format(summary.roas)}×`}
-										</TableCell>
-										<TableCell className="text-right">
-											{money(summary.costs)}
-										</TableCell>
-										<TableCell className="text-right font-medium">
-											{money(
-												summary.contribution,
-												"Incomplete",
-											)}
-										</TableCell>
-									</TableRow>
-								))}
-						</TableBody>
-					</Table>
-					{summaries.length > pageSize && (
-						<div className="flex items-center justify-end gap-3 border-t px-4 py-3">
-							<Button
-								type="button"
-								size="sm"
-								variant="outline"
-								disabled={page === 0}
-								onClick={() => setPage(page - 1)}
-							>
-								Previous
-							</Button>
-							<span className="text-sm">
-								Page {page + 1} of{" "}
-								{Math.ceil(summaries.length / pageSize)}
-							</span>
-							<Button
-								type="button"
-								size="sm"
-								variant="outline"
-								disabled={
-									(page + 1) * pageSize >= summaries.length
-								}
-								onClick={() => setPage(page + 1)}
-							>
-								Next
-							</Button>
-						</div>
-					)}
-					<p className="border-t px-4 py-4 text-muted-foreground text-sm sm:px-6">
-						Net revenue is merchandise sales after discounts, less
-						refunds. ROAS divides net revenue by ad spend and
-						requires known, positive spend. Contribution subtracts
-						ad spend and variable costs from net revenue and
-						requires both inputs on every included day.
-					</p>
-				</>
-			)}
-		</Card>
-	);
-}
-
-export function CampaignReport() {
+export function CampaignReport({
+	viewerId,
+	organizationId,
+}: {
+	viewerId: string;
+	organizationId?: string;
+}) {
 	const locale = useLocale();
 	const input = useRef<HTMLInputElement>(null);
-	const [source, setSource] = useState<{
-		name: string;
-		rows: CampaignDay[];
-		version: number;
-	} | null>(null);
-	const [error, setError] = useState("");
-	const [loading, setLoading] = useState(false);
+	const [preview, setPreview] = useState<ReportPreview | null>(null);
+	const [version, setVersion] = useState(0);
+	const [alert, setAlert] = useState("");
+	const [notice, setNotice] = useState("");
+	const [reading, setReading] = useState(false);
+	const report = useQuery(
+		orpc.tracking.getReport.queryOptions({
+			input: { organizationId },
+			queryKey: ["campaign-report", viewerId, organizationId ?? null],
+		}),
+	);
+	const save = useMutation(orpc.tracking.saveReport.mutationOptions());
+	const saved = report.isSuccess ? report.data : undefined;
+	const source = preview ?? saved;
+	const rows = source?.rows ?? [];
+	const busy = reading || save.isPending;
+	const displayKey = preview ? `preview-${version}` : saved?.revision;
+	const workspace = organizationId ? "organization" : "personal workspace";
 
-	function loadCsv(csv: string, name: string) {
-		const rows = parseCampaignCsv(csv);
-		setSource((previous) => ({
-			name,
-			rows,
-			version: (previous?.version ?? 0) + 1,
-		}));
-		setError("");
+	function showPreview(data: Omit<ReportPreview, "expectedRevision">) {
+		setPreview({ ...data, expectedRevision: saved?.revision ?? null });
+		setVersion((previous) => previous + 1);
+		setNotice("");
+		setAlert("");
 	}
 
 	async function importFile(event: ChangeEvent<HTMLInputElement>) {
@@ -340,39 +74,106 @@ export function CampaignReport() {
 		if (!file) {
 			return;
 		}
-		if (file.size > maxFileBytes) {
-			setError("Choose a CSV file of 2 MiB or less.");
-			return;
-		}
-		setLoading(true);
-		setError("");
+		setAlert("");
+		setNotice("");
+		setReading(true);
 		try {
-			loadCsv(await file.text(), file.name);
+			if (file.size > 2 * 1024 * 1024) {
+				throw new Error("Choose a CSV file of 2 MiB or less.");
+			}
+			const data = parseCampaignCsv(await file.text());
+			if (data.length > 10000) {
+				throw new Error("A report supports up to 10,000 daily totals.");
+			}
+			if (
+				data.some(
+					(row) =>
+						row.channel.length > 200 || row.campaign.length > 200,
+				)
+			) {
+				throw new Error(
+					"Use 200 characters or fewer for campaign and channel names.",
+				);
+			}
+			showPreview({
+				name: file.name,
+				sample: false,
+				rows: data,
+				attributionSource: null,
+				attribution: null,
+			});
 		} catch (cause) {
-			setError(
+			setAlert(
 				cause instanceof Error
 					? cause.message
 					: "The CSV could not be read.",
 			);
 		} finally {
-			setLoading(false);
+			setReading(false);
+		}
+	}
+
+	async function savePreview() {
+		if (!preview || preview.sample || !saved?.canEdit) {
+			return;
+		}
+		setReading(true);
+		setAlert("");
+		setNotice("");
+		try {
+			await save.mutateAsync({
+				organizationId,
+				expectedRevision: preview.expectedRevision,
+				...(preview.attributionSource
+					? { attributionSource: preview.attributionSource }
+					: { rows: preview.rows }),
+			});
+			await report.refetch();
+			setPreview(null);
+			setNotice("Report saved.");
+		} catch (cause) {
+			if (cause instanceof ORPCError && cause.code === "CONFLICT") {
+				setAlert(
+					"The saved report changed after this preview opened. Close the preview to review the latest version before importing again.",
+				);
+				await report.refetch();
+			} else {
+				setAlert(
+					"The report could not be saved. Your preview is still open.",
+				);
+			}
+		} finally {
+			setReading(false);
 		}
 	}
 
 	return (
-		<div className="min-w-0">
-			<PageHeader
-				title="Campaign report"
-				subtitle="Compare campaign revenue, ad spend, and contribution after refunds."
-			/>
-			<div className="space-y-6">
-				<Card className="space-y-4 p-4 sm:p-6">
-					<div className="space-y-1">
-						<h2 className="font-semibold text-xl">Report data</h2>
-						<p className="text-muted-foreground text-sm">
-							Import daily campaign totals from a CSV up to 2 MiB.
-							Your file stays in this browser tab. Refreshing or
-							leaving this page clears the report.
+		<div className="min-w-0 space-y-5">
+			<header>
+				<h1 className="text-3xl font-bold tracking-tight">
+					Campaign report
+				</h1>
+				<p className="mt-2 text-muted-foreground">
+					Compare campaign revenue, ad spend, and contribution after
+					refunds.
+				</p>
+			</header>
+			<Card className="space-y-4 p-4 sm:p-6">
+				<div className="flex flex-wrap items-start justify-between gap-4">
+					<div className="min-w-0 space-y-1">
+						<h2 className="text-lg font-semibold">Report data</h2>
+						<p className="text-sm text-muted-foreground">
+							{preview?.sample
+								? "Sample data · Preview only"
+								: preview
+									? `Import preview · ${preview.name}`
+									: saved?.revision
+										? `Saved to your ${workspace}`
+										: report.isPending
+											? "Loading your saved report…"
+											: "Import daily campaign totals or preview an example."}
+							{rows.length > 0 &&
+								` · ${rows.length.toLocaleString(locale)} daily ${rows.length === 1 ? "record" : "records"}`}
 						</p>
 					</div>
 					<div className="flex flex-wrap gap-2">
@@ -382,109 +183,177 @@ export function CampaignReport() {
 							accept=".csv,text/csv"
 							aria-label="Campaign CSV file"
 							hidden
-							disabled={loading}
+							disabled={busy}
 							onChange={importFile}
 						/>
 						<Button
 							type="button"
-							variant="primary"
-							loading={loading}
+							variant="outline"
+							disabled={busy}
 							onClick={() => input.current?.click()}
 						>
 							<UploadIcon className="size-4" aria-hidden="true" />
-							{source ? "Replace CSV" : "Import CSV"}
+							Import CSV
 						</Button>
 						<Button
 							type="button"
 							variant="outline"
-							disabled={loading}
-							onClick={() => loadCsv(SAMPLE_CSV, "Example data")}
+							disabled={busy}
+							onClick={() =>
+								showPreview({
+									name: "Example data",
+									sample: true,
+									rows: parseCampaignCsv(SAMPLE_CSV),
+									attributionSource: null,
+									attribution: null,
+								})
+							}
 						>
 							Load example
 						</Button>
-						{source && (
+					</div>
+				</div>
+				{preview && (
+					<div className="flex flex-wrap items-center gap-2">
+						{!preview.sample && saved?.canEdit && (
 							<Button
 								type="button"
-								variant="ghost"
-								disabled={loading}
-								onClick={() => {
-									setSource(null);
-									setError("");
-								}}
+								variant="primary"
+								disabled={
+									busy ||
+									preview.expectedRevision !== saved.revision
+								}
+								loading={save.isPending}
+								onClick={savePreview}
 							>
-								Clear data
+								{saved.revision
+									? "Replace saved report"
+									: "Save report"}
 							</Button>
 						)}
+						<Button
+							type="button"
+							variant="ghost"
+							disabled={busy}
+							onClick={() => {
+								setPreview(null);
+								setAlert("");
+								setNotice("");
+							}}
+						>
+							Close preview
+						</Button>
 					</div>
-					<p
-						role="status"
-						className="break-words text-sm empty:hidden"
-					>
-						{loading
-							? "Reading CSV…"
-							: source &&
-								`${source.name} · ${source.rows.length.toLocaleString(locale)} daily ${source.rows.length === 1 ? "record" : "records"}`}
-					</p>
-					{error && <Alert variant="error">{error}</Alert>}
-					<details className="border-t pt-3 text-sm">
-						<summary className="w-fit cursor-pointer font-medium">
-							CSV format and downloads
-						</summary>
-						<div className="mt-3 space-y-2 text-muted-foreground">
-							<p>
-								Use one row per date, channel, campaign, and
-								currency. Use YYYY-MM-DD dates, three-letter
-								currency codes, and decimal amounts without
-								currency symbols. Reports compare one currency
-								at a time.
-							</p>
-							<p>
-								Enter merchandise sales after discounts,
-								excluding taxes and shipping. Enter refunds as
-								positive amounts. For spend and variable costs,
-								use zero for a confirmed zero and leave the
-								amount blank when unknown.
-							</p>
-							<p>
-								Variable costs include the cost of goods sold,
-								fulfillment, payment fees, and other per-order
-								expenses.
-							</p>
-							<div className="flex flex-wrap gap-2 pt-1">
-								<Button
-									type="button"
-									size="sm"
-									variant="outline"
-									onClick={() =>
-										downloadCsv(
-											TEMPLATE_CSV,
-											"campaign-template.csv",
-										)
-									}
-								>
-									Download template
-								</Button>
-								<Button
-									type="button"
-									size="sm"
-									variant="outline"
-									onClick={() =>
-										downloadCsv(
-											SAMPLE_CSV,
-											"campaign-example.csv",
-										)
-									}
-								>
-									Download example
-								</Button>
-							</div>
-						</div>
-					</details>
-				</Card>
-				{source && (
-					<ReportResults key={source.version} rows={source.rows} />
 				)}
-			</div>
+				{preview &&
+					!preview.sample &&
+					saved &&
+					preview.expectedRevision !== saved.revision &&
+					!alert && (
+						<Alert>
+							The saved report has changed. Close the preview to
+							review the latest version before importing again.
+						</Alert>
+					)}
+				{saved && !saved.canEdit && (
+					<p className="text-muted-foreground text-sm">
+						Organization owners and admins can save reports.
+					</p>
+				)}
+				{report.isError && (
+					<Alert variant="error">
+						Your saved report could not be loaded.{" "}
+						<button
+							type="button"
+							className="font-medium underline"
+							disabled={report.isFetching}
+							onClick={() => report.refetch()}
+						>
+							Retry
+						</button>
+					</Alert>
+				)}
+				{alert && <Alert variant="error">{alert}</Alert>}
+				<p role="status" className="text-sm empty:hidden">
+					{notice}
+				</p>
+				<OrderAttributionImport
+					key={displayKey}
+					source={source?.attributionSource ?? null}
+					busy={busy}
+					setBusy={setReading}
+					onPreview={(result, attributionSource) =>
+						showPreview({
+							name: "Order attribution",
+							sample: false,
+							rows: result.rows,
+							attribution: result,
+							attributionSource,
+						})
+					}
+				/>
+				<details className="border-t pt-3 text-sm">
+					<summary className="w-fit cursor-pointer font-medium">
+						CSV format and downloads
+					</summary>
+					<div className="mt-3 space-y-2 text-muted-foreground">
+						<p>
+							Use one row per date, channel, campaign, and
+							currency. Use YYYY-MM-DD dates, three-letter
+							currency codes, and decimal amounts without currency
+							symbols. Reports compare one currency at a time.
+						</p>
+						<p>
+							Enter merchandise sales after discounts, excluding
+							taxes and shipping. Enter refunds as positive
+							amounts. For spend and variable costs, use zero for
+							a confirmed zero and leave the amount blank when
+							unknown.
+						</p>
+						<p>
+							Variable costs include the cost of goods sold,
+							fulfillment, payment fees, and other per-order
+							expenses.
+						</p>
+						<div className="flex flex-wrap gap-2 pt-1">
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								onClick={() =>
+									downloadReportFile(
+										TEMPLATE_CSV,
+										"campaign-template.csv",
+									)
+								}
+							>
+								Download template
+							</Button>
+							<Button
+								type="button"
+								size="sm"
+								variant="outline"
+								onClick={() =>
+									downloadReportFile(
+										SAMPLE_CSV,
+										"campaign-example.csv",
+									)
+								}
+							>
+								Download example
+							</Button>
+						</div>
+					</div>
+				</details>
+			</Card>
+			{rows.length > 0 && <ReportResults key={displayKey} rows={rows} />}
+			{source?.attribution && source.attributionSource && (
+				<AttributionEvidence
+					key={`evidence-${displayKey}`}
+					result={source.attribution}
+					source={source.attributionSource}
+				/>
+			)}
 		</div>
 	);
 }

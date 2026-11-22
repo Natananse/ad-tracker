@@ -13,8 +13,13 @@ for (const filename of [".env.local", ".env"]) {
 
 const cliUrl = process.env.DIRECT_URL || process.env.DATABASE_URL;
 
-export default defineConfig({
+const schemaConfig = {
 	schema: "prisma/schema.prisma",
 	migrations: { seed: "node prisma/seed.mjs" },
-	...(cliUrl ? { engine: "classic" as const, datasource: { url: cliUrl } } : {}),
-});
+};
+
+export default defineConfig(
+	cliUrl
+		? { ...schemaConfig, engine: "classic", datasource: { url: cliUrl } }
+		: schemaConfig,
+);

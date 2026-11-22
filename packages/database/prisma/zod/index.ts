@@ -76,6 +76,18 @@ export const AiChatScalarFieldEnumSchema = z.enum(['id', 'organizationId', 'user
 
 export type AiChatScalarFieldEnum = z.infer<typeof AiChatScalarFieldEnumSchema>;
 
+// File: CampaignReportScalarFieldEnum.schema.ts
+
+export const CampaignReportScalarFieldEnumSchema = z.enum(['id', 'userId', 'organizationId', 'revision', 'attributionSource'])
+
+export type CampaignReportScalarFieldEnum = z.infer<typeof CampaignReportScalarFieldEnumSchema>;
+
+// File: CampaignDailyFactScalarFieldEnum.schema.ts
+
+export const CampaignDailyFactScalarFieldEnumSchema = z.enum(['reportId', 'date', 'channel', 'campaign', 'currency', 'sales', 'refunds', 'spend', 'costs'])
+
+export type CampaignDailyFactScalarFieldEnum = z.infer<typeof CampaignDailyFactScalarFieldEnumSchema>;
+
 // File: BlogPostScalarFieldEnum.schema.ts
 
 export const BlogPostScalarFieldEnumSchema = z.enum(['id', 'title', 'slug', 'excerpt', 'content', 'image', 'authorId', 'published', 'locale', 'tags', 'createdAt', 'updatedAt'])
@@ -99,6 +111,12 @@ export type SortOrder = z.infer<typeof SortOrderSchema>;
 export const JsonNullValueInputSchema = z.enum(['JsonNull'])
 
 export type JsonNullValueInput = z.infer<typeof JsonNullValueInputSchema>;
+
+// File: NullableJsonNullValueInput.schema.ts
+
+export const NullableJsonNullValueInputSchema = z.enum(['DbNull', 'JsonNull'])
+
+export type NullableJsonNullValueInput = z.infer<typeof NullableJsonNullValueInputSchema>;
 
 // File: QueryMode.schema.ts
 
@@ -306,6 +324,36 @@ export const AiChatSchema = z.object({
 });
 
 export type AiChatType = z.infer<typeof AiChatSchema>;
+
+
+// File: CampaignReport.schema.ts
+
+export const CampaignReportSchema = z.object({
+  id: z.string(),
+  userId: z.string().nullish(),
+  organizationId: z.string().nullish(),
+  revision: z.string(),
+  attributionSource: z.unknown().refine((val) => { const getDepth = (obj: unknown, depth: number = 0): number => { if (depth > 10) return depth; if (obj === null || typeof obj !== 'object') return depth; const values = Object.values(obj as Record<string, unknown>); if (values.length === 0) return depth; return Math.max(...values.map(v => getDepth(v, depth + 1))); }; return getDepth(val) <= 10; }, "JSON nesting depth exceeds maximum of 10").nullish(),
+});
+
+export type CampaignReportType = z.infer<typeof CampaignReportSchema>;
+
+
+// File: CampaignDailyFact.schema.ts
+
+export const CampaignDailyFactSchema = z.object({
+  reportId: z.string(),
+  date: z.string(),
+  channel: z.string(),
+  campaign: z.string(),
+  currency: z.string(),
+  sales: z.bigint(),
+  refunds: z.bigint(),
+  spend: z.bigint().nullish(),
+  costs: z.bigint().nullish(),
+});
+
+export type CampaignDailyFactType = z.infer<typeof CampaignDailyFactSchema>;
 
 
 // File: BlogPost.schema.ts

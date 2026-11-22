@@ -1,9 +1,13 @@
-import { Hero } from "@marketing/home/components/Hero";
-import { Features } from "@marketing/home/components/Features";
 import { Faq } from "@marketing/home/components/Faq";
-import { Newsletter } from "@marketing/home/components/Newsletter";
+import { Features } from "@marketing/home/components/Features";
+import { Hero } from "@marketing/home/components/Hero";
 import { PricingSection } from "@marketing/home/components/PricingSection";
 import { setRequestLocale } from "next-intl/server";
+
+export const metadata = {
+	description:
+		"Compare Shopify campaign revenue, ad spend, and contribution after refunds. Explore a demo or import your own campaign data.",
+};
 
 export default async function Home({
 	params,
@@ -19,7 +23,6 @@ export default async function Home({
 			<Features />
 			<PricingSection />
 			<Faq />
-			<Newsletter />
 		</>
 	);
 }

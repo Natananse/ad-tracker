@@ -7,11 +7,14 @@ import { webhookHandler as paymentsWebhookHandler } from "@repo/payments";
 import { getBaseUrl } from "@repo/utils";
 import { Scalar } from "@scalar/hono-api-reference";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { logger as honoLogger } from "hono/logger";
 import { mergeOpenApiSchemas } from "./lib/openapi-schema";
 import { openApiHandler, rpcHandler } from "./orpc/handler";
 import { router } from "./orpc/router";
+
+const reportBodyLimit = bodyLimit({ maxSize: 8 * 1024 * 1024 });
 
 export const app = new Hono()
 	.basePath("/api")
@@ -30,6 +33,8 @@ export const app = new Hono()
 	)
 	// Auth handler
 	.on(["POST", "GET"], "/auth/**", (c) => auth.handler(c.req.raw))
+	.use("/tracking/*", reportBodyLimit)
+	.use("/rpc/tracking/*", reportBodyLimit)
 	// OpenAPI schema endpoint
 	.get("/openapi", async (c) => {
 		const authSchema = await auth.api.generateOpenAPISchema();

@@ -220,6 +220,23 @@ function addKnown(total: number | null, value: number | null) {
 	return total === null || value === null ? null : total + value;
 }
 
+export function campaignOverview(summaries: CampaignSummary[]) {
+	let netRevenue = 0;
+	let spend: number | null = 0;
+	let contribution: number | null = 0;
+	for (const campaign of summaries) {
+		netRevenue += campaign.netRevenue;
+		spend = addKnown(spend, campaign.spend);
+		contribution = addKnown(contribution, campaign.contribution);
+	}
+	return {
+		netRevenue,
+		spend,
+		contribution,
+		roas: spend ? netRevenue / spend : null,
+	};
+}
+
 export function buildCampaignReport(
 	rows: CampaignDay[],
 	filter: CampaignFilter,

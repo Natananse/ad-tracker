@@ -465,7 +465,7 @@
 			"basic": {
 				"description": "Perfekt für den Einstieg",
 				"features": {
-					"anotherFeature": "Ein weiteres erstaunliches Merkmal",
+					"campaignReports": "Berichte zur Kampagnenrentabilität",
 					"limitedSupport": "Begrenzter Support"
 				},
 				"title": "Basic"
@@ -481,7 +481,7 @@
 			"free": {
 				"description": "Kostenloser Start",
 				"features": {
-					"anotherFeature": "Ein weiteres erstaunliches Merkmal",
+					"campaignReports": "Berichte zur Kampagnenrentabilität",
 					"limitedSupport": "Begrenzter Support"
 				},
 				"title": "Free"
@@ -497,7 +497,7 @@
 			"pro": {
 				"description": "Am besten für Teams",
 				"features": {
-					"anotherFeature": "Ein weiteres erstaunliches Merkmal",
+					"campaignReports": "Berichte zur Kampagnenrentabilität",
 					"fiveMembers": "Bis zu 5 Mitglieder",
 					"fullSupport": "Voller Support"
 				},

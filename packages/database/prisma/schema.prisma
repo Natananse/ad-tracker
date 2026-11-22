@@ -39,6 +39,7 @@ model User {
     members            Member[]
     twofactors         TwoFactor[]
     aiChats            AiChat[]
+    campaignReport     CampaignReport?
     blogPosts          BlogPost[]
     productUpdates     ProductUpdate[] @relation("productUpdates")
 
@@ -139,6 +140,7 @@ model Organization {
     invitations        Invitation[]
     purchases          Purchase[]
     aiChats            AiChat[]
+    campaignReport     CampaignReport?
 
     @@unique([slug])
     @@map("organization")
@@ -207,6 +209,36 @@ model AiChat {
     updatedAt      DateTime      @updatedAt
 
     @@map("ai_chat")
+}
+
+model CampaignReport {
+    id             String              @id @default(cuid())
+    userId         String?             @unique
+    user           User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+    organizationId String?             @unique
+    organization   Organization?       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    revision       String              @db.Uuid
+    attributionSource Json?
+    days           CampaignDailyFact[]
+
+    @@map("campaign_report")
+}
+
+model CampaignDailyFact {
+    reportId String
+    report   CampaignReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+    date     String         @db.VarChar(10)
+    channel  String         @db.VarChar(200)
+    campaign String         @db.VarChar(200)
+    currency String         @db.VarChar(3)
+    // All financial values are integers in this currency's minor unit.
+    sales    BigInt
+    refunds  BigInt
+    spend    BigInt?
+    costs    BigInt?
+
+    @@id([reportId, date, channel, campaign, currency])
+    @@map("campaign_daily_fact")
 }
 
 model BlogPost {

@@ -9,8 +9,24 @@ test.describe("home page", () => {
 			await expect(
 				page.getByRole("heading", {
 					level: 1,
-					name: "Manage your team's workflow effortlessly",
+					name: "See which ads bring your store a profit",
 				}),
+			).toBeVisible();
+			await page.getByRole("button", { name: "Campaign costs" }).click();
+			await expect(
+				page.getByRole("columnheader", { name: "Refunds" }),
+			).toBeVisible();
+			await page
+				.getByRole("link", { name: "View demo store", exact: true })
+				.click();
+			await expect(
+				page.getByRole("heading", {
+					name: "Campaign report",
+					exact: true,
+				}),
+			).toBeVisible();
+			await expect(
+				page.getByRole("rowheader", { name: /Prospecting/ }),
 			).toBeVisible();
 		});
 	} else {

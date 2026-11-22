@@ -7,20 +7,20 @@ import { useState } from "react";
 
 const faqItems = [
 	{
-		question: "What is the refund policy?",
-		answer: "We offer a 30-day money-back guarantee if you're not happy with our product.",
+		question: "How do I bring in my store data?",
+		answer: "Import daily campaign totals as a CSV, or upload a JSON snapshot with orders, refunds, clicks, and spend to calculate attribution. Both formats have downloadable examples in your workspace.",
 	},
 	{
-		question: "How do I cancel my subscription?",
-		answer: "You can cancel your subscription by visiting the billing page.",
+		question: "What does contribution after ads include?",
+		answer: "Start with merchandise sales after discounts. Subtract refunds, ad spend, and variable costs such as product costs, fulfillment, and payment fees. The amount left can help cover overhead.",
 	},
 	{
-		question: "Can I change my plan?",
-		answer: "Yes, you can change your plan at any time by visiting the billing page.",
+		question: "What happens when data is missing?",
+		answer: "Missing spend and costs are marked as unknown. Orders without a qualifying click appear as unmatched, so you can still account for their sales.",
 	},
 	{
-		question: "Do you offer a free trial?",
-		answer: "Yes, we offer a 14-day free trial.",
+		question: "Can I compare attribution models?",
+		answer: "Yes. With an order snapshot, choose first-click or last-click attribution and a 7-day or 28-day window. Review the credited click for each order before saving the report.",
 	},
 ];
 
@@ -51,14 +51,15 @@ export function Faq({ className }: { className?: string }) {
 						>
 							<button
 								type="button"
+								aria-expanded={openIndex === i}
 								onClick={() =>
 									setOpenIndex(openIndex === i ? null : i)
 								}
 								className="w-full flex items-center justify-between p-4 lg:p-6 hover:bg-card/50 transition-colors"
 							>
-								<h4 className="font-semibold text-lg text-left">
+								<span className="font-semibold text-lg text-left">
 									{item.question}
-								</h4>
+								</span>
 								<ChevronDownIcon
 									className={cn(
 										"size-5 text-foreground/60 transition-transform flex-shrink-0 ml-4",

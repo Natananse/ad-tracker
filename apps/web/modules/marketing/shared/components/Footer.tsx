@@ -4,41 +4,29 @@ import { Logo } from "@shared/components/Logo";
 
 export function Footer() {
 	return (
-		<footer className="border-t py-8 text-foreground/60 text-sm">
-			<div className="container grid grid-cols-1 gap-6 lg:grid-cols-3">
+		<footer className="border-t border-[#203940] bg-[#081820] py-10 text-sm text-[#c5d2d8]">
+			<div className="container flex flex-wrap justify-between gap-8">
 				<div>
-					<Logo className="opacity-70 grayscale" />
-					<p className="mt-3 text-sm opacity-70">
-						© {new Date().getFullYear()} {config.appName}.{" "}
-						<a href="https://supastarter.dev">
-							Built with supastarter
-						</a>
-						.
+					<LocaleLink href="/">
+						<Logo className="text-white" />
+					</LocaleLink>
+					<p className="mt-3">
+						© {new Date().getFullYear()} {config.appName}
 					</p>
 				</div>
-
-				<div className="flex flex-col gap-2">
-					<LocaleLink href="/blog" className="block">
-						Blog
-					</LocaleLink>
-
-					<a href="#features" className="block">
-						Features
-					</a>
-
-					<a href="/#pricing" className="block">
-						Pricing
-					</a>
-				</div>
-
-				<div className="flex flex-col gap-2">
-					<LocaleLink href="/legal/privacy-policy" className="block">
+				<div className="grid grid-cols-2 gap-x-8 gap-y-3">
+					<LocaleLink href="/#features">Attribution</LocaleLink>
+					<LocaleLink href="/legal/privacy-policy">
 						Privacy policy
 					</LocaleLink>
-
-					<LocaleLink href="/legal/terms" className="block">
+					<LocaleLink href="/demo">Demo store</LocaleLink>
+					<LocaleLink href="/legal/terms">
 						Terms and conditions
 					</LocaleLink>
+					<LocaleLink href="/#pricing">Pricing</LocaleLink>
+					{config.contactForm.enabled && (
+						<LocaleLink href="/contact">Contact</LocaleLink>
+					)}
 				</div>
 			</div>
 		</footer>

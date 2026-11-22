@@ -5,6 +5,7 @@ import { contactRouter } from "../modules/contact/router";
 import { newsletterRouter } from "../modules/newsletter/router";
 import { organizationsRouter } from "../modules/organizations/router";
 import { paymentsRouter } from "../modules/payments/router";
+import { trackingRouter } from "../modules/tracking/router";
 import { usersRouter } from "../modules/users/router";
 import { publicProcedure } from "./procedures";
 
@@ -18,6 +19,7 @@ export const router = publicProcedure
 		organizations: organizationsRouter,
 		users: usersRouter,
 		payments: paymentsRouter,
+		tracking: trackingRouter,
 		ai: aiRouter,
 	});
 

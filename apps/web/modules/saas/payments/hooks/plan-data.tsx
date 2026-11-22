@@ -19,7 +19,7 @@ export function usePlanData() {
 			title: t("pricing.products.free.title"),
 			description: t("pricing.products.free.description"),
 			features: [
-				t("pricing.products.free.features.anotherFeature"),
+				t("pricing.products.free.features.campaignReports"),
 				t("pricing.products.free.features.limitedSupport"),
 			],
 		},
@@ -27,7 +27,7 @@ export function usePlanData() {
 			title: t("pricing.products.pro.title"),
 			description: t("pricing.products.pro.description"),
 			features: [
-				t("pricing.products.pro.features.anotherFeature"),
+				t("pricing.products.pro.features.campaignReports"),
 				t("pricing.products.pro.features.fullSupport"),
 			],
 		},
