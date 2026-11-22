@@ -4,11 +4,11 @@ import { Logo } from "@shared/components/Logo";
 
 export function Footer() {
 	return (
-		<footer className="border-t border-[#203940] bg-[#081820] py-10 text-sm text-[#c5d2d8]">
+		<footer className="border-t border-border bg-card py-10 text-sm text-muted-foreground">
 			<div className="container flex flex-wrap justify-between gap-8">
 				<div>
 					<LocaleLink href="/">
-						<Logo className="text-white" />
+						<Logo className="text-card-foreground" />
 					</LocaleLink>
 					<p className="mt-3">
 						© {new Date().getFullYear()} {config.appName}

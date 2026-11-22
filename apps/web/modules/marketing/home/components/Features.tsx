@@ -1,111 +1,117 @@
 import { LocaleLink } from "@i18n/routing";
 import {
 	ArrowRightIcon,
+	ChartColumnIcon,
 	MousePointerClickIcon,
-	ScanLineIcon,
-	ShoppingBagIcon,
+	ReceiptTextIcon,
 } from "lucide-react";
+import styles from "./Features.module.css";
 
 export function Features() {
 	return (
 		<section
 			id="features"
-			className="scroll-mt-28 border-b border-border bg-card"
+			className={styles.features}
+			aria-labelledby="features-title"
 		>
-			<div className="mx-auto max-w-6xl px-5 py-16 lg:px-10 lg:py-24">
-				<h2 className="mx-auto max-w-3xl text-balance text-center text-3xl leading-tight font-bold tracking-tight sm:text-5xl">
-					Trace each campaign from{" "}
-					<span className="text-emerald-700 dark:text-emerald-400">
-						click to contribution
-					</span>
-				</h2>
-				<div className="mt-12 grid overflow-hidden rounded-2xl border border-border md:grid-cols-2">
-					<div className="flex flex-col items-start justify-center gap-4 p-6 sm:p-10">
-						<h3 className="text-2xl font-semibold tracking-tight">
-							See which click gets credit
-						</h3>
-						<p className="max-w-lg text-muted-foreground">
-							Compare first-click and last-click results over 7 or
-							28 days. Open an order to see the click that
-							qualified and keep unmatched orders visible.
+			<div className={styles.inner}>
+				<div className={styles.intro}>
+					<div>
+						<h2 id="features-title">
+							Understand where your ad budget goes.
+						</h2>
+						<p>
+							Follow the numbers from the click that earned the
+							sale to the money left after costs.
 						</p>
-						<LocaleLink
-							href="/demo"
-							className="inline-flex items-center gap-1.5 font-semibold text-emerald-700 hover:underline dark:text-emerald-400"
+					</div>
+					<LocaleLink href="/demo" className={styles.link}>
+						Explore the report{" "}
+						<ArrowRightIcon size={16} aria-hidden="true" />
+					</LocaleLink>
+				</div>
+				<div className={styles.cards}>
+					<article className={styles.card}>
+						<div className={styles.heading}>
+							<ReceiptTextIcon aria-hidden="true" />
+							<h3>Account for refunds</h3>
+						</div>
+						<p>
+							See how much of each campaign’s sales you kept after
+							customers returned an order.
+						</p>
+						<dl
+							className={styles.panel}
+							aria-label="Sample Prospecting campaign"
 						>
-							Explore the demo <ArrowRightIcon size={16} />
-						</LocaleLink>
-					</div>
-					<div className="grid content-center gap-3 bg-[#edf5f2] p-6 sm:p-10 dark:bg-[#102922]">
-						{[
-							{
-								Icon: MousePointerClickIcon,
-								label: "Observed ad click",
-								value: "Ad channel and campaign",
-							},
-							{
-								Icon: ShoppingBagIcon,
-								label: "Paid order",
-								value: "Order date, sales, and refunds",
-							},
-							{
-								Icon: ScanLineIcon,
-								label: "Attribution result",
-								value: "Selected click or unmatched",
-							},
-						].map(({ Icon, label, value }) => (
-							<div
-								key={label}
-								className="flex items-center gap-3 rounded-lg border bg-card px-4 py-3"
-							>
-								<Icon
-									size={19}
-									className="shrink-0 text-emerald-700 dark:text-emerald-400"
-								/>
-								<div>
-									<div className="text-sm font-semibold">
-										{label}
-									</div>
-									<div className="text-xs text-muted-foreground">
-										{value}
-									</div>
-								</div>
+							<div>
+								<dt>Merchandise sales</dt>
+								<dd>$1,000</dd>
 							</div>
-						))}
-					</div>
-					<div className="order-4 flex items-center bg-[#edf5f2] p-6 sm:p-10 md:order-3 dark:bg-[#102922]">
-						<dl className="w-full rounded-lg border bg-card p-5">
-							<div className="mb-3 font-semibold">
-								Prospecting · sample report
+							<div>
+								<dt>Refunds</dt>
+								<dd>−$200</dd>
 							</div>
-							{[
-								["Sales after discounts", "$1,000"],
-								["Refunds", "−$200"],
-								["Product and variable costs", "−$650"],
-								["Ad spend", "−$200"],
-								["Contribution after ads", "−$50"],
-							].map(([term, amount]) => (
-								<div
-									key={term}
-									className="flex justify-between gap-3 border-b border-border/60 py-1.5 text-sm last:border-0 last:pt-3 last:font-bold"
-								>
-									<dt>{term}</dt>
-									<dd className="tabular-nums">{amount}</dd>
-								</div>
-							))}
+							<div className={styles.total}>
+								<dt>Net sales</dt>
+								<dd>$800</dd>
+							</div>
 						</dl>
-					</div>
-					<div className="order-3 flex flex-col justify-center gap-4 p-6 sm:p-10 md:order-4">
-						<h3 className="text-2xl font-semibold tracking-tight">
-							Follow the money after a sale
-						</h3>
-						<p className="max-w-lg text-muted-foreground">
-							A campaign can return four dollars in revenue for
-							every dollar spent and still lose money. Review its
-							refunds, ad spend, and variable costs together
-							before you change the budget.
+					</article>
+					<article className={`${styles.card} ${styles.highlight}`}>
+						<div className={styles.heading}>
+							<MousePointerClickIcon aria-hidden="true" />
+							<h3>Trace each order</h3>
+						</div>
+						<p>
+							Switch between first and last click to see which
+							campaign gets credit for an order.
 						</p>
-					</div>
+						<dl
+							className={styles.panel}
+							aria-label="Sample order 101 with a 28-day lookback"
+						>
+							<div>
+								<dt>First click</dt>
+								<dd>Google Ads</dd>
+							</div>
+							<div>
+								<dt>Last click</dt>
+								<dd>Meta Ads</dd>
+							</div>
+							<div className={styles.total}>
+								<dt>Order 101</dt>
+								<dd>28-day window</dd>
+							</div>
+						</dl>
+					</article>
+					<article className={styles.card}>
+						<div className={styles.heading}>
+							<ChartColumnIcon aria-hidden="true" />
+							<h3>Compare what’s left</h3>
+						</div>
+						<p>
+							Compare the amount each campaign contributes after
+							ad spend and variable costs.
+						</p>
+						<dl
+							className={styles.panel}
+							aria-label="Sample contribution after ads"
+						>
+							<div>
+								<dt>Prospecting</dt>
+								<dd className={styles.negative}>−$50</dd>
+							</div>
+							<div>
+								<dt>Shopping</dt>
+								<dd>+$180</dd>
+							</div>
+							<div className={styles.total}>
+								<dt>Combined</dt>
+								<dd>+$130</dd>
+							</div>
+						</dl>
+					</article>
 				</div>
 			</div>
 		</section>

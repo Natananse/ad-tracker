@@ -20,7 +20,7 @@ export function DemoStore() {
 		<div className="space-y-5">
 			<header className="flex flex-wrap items-end justify-between gap-5 rounded-xl border bg-card p-5 sm:p-7">
 				<div>
-					<p className="mb-2 flex items-center gap-2 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+					<p className="mb-2 flex items-center gap-2 text-sm font-semibold text-blue-700 dark:text-blue-400">
 						<StoreIcon size={16} /> Demo store
 					</p>
 					<h1 className="text-3xl font-bold tracking-tight">

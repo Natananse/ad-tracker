@@ -2,6 +2,7 @@ import { Faq } from "@marketing/home/components/Faq";
 import { Features } from "@marketing/home/components/Features";
 import { Hero } from "@marketing/home/components/Hero";
 import { PricingSection } from "@marketing/home/components/PricingSection";
+import { ReportSourcesStrip } from "@marketing/home/components/ReportSourcesStrip";
 import { setRequestLocale } from "next-intl/server";
 
 export const metadata = {
@@ -20,6 +21,7 @@ export default async function Home({
 	return (
 		<>
 			<Hero />
+			<ReportSourcesStrip />
 			<Features />
 			<PricingSection />
 			<Faq />

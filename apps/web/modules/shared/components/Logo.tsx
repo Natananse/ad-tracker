@@ -16,7 +16,7 @@ export function Logo({
 				className,
 			)}
 		>
-			<span className="grid size-8 shrink-0 place-items-center rounded-lg bg-emerald-500 text-slate-950">
+			<span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#263bfb] text-white">
 				<ChartNoAxesCombinedIcon
 					className="size-5"
 					strokeWidth={2.5}
