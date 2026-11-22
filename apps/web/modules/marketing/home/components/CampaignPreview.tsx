@@ -1,13 +1,7 @@
 "use client";
 
 import { LocaleLink } from "@i18n/routing";
-import { computeAttribution } from "@repo/api/modules/tracking/attribution/compute";
-import example from "@repo/api/modules/tracking/attribution/example.json";
-import {
-	buildCampaignReport,
-	campaignOverview,
-	formatMoney,
-} from "@saas/tracking/lib/campaign-report";
+import { formatMoney } from "@saas/tracking/lib/campaign-report";
 import {
 	ArrowUpRightIcon,
 	BarChart3Icon,
@@ -19,17 +13,14 @@ import {
 } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useState } from "react";
+import {
+	demoCampaignReports,
+	demoCurrency,
+	demoReportDate,
+} from "../lib/demo-campaign-reports";
 import styles from "./CampaignPreview.module.css";
 
-const campaigns = buildCampaignReport(
-	computeAttribution({
-		snapshot: example,
-		model: "last-click",
-		windowDays: 28,
-	}).rows,
-	{ currency: example.currency, start: "", end: "" },
-);
-const overview = campaignOverview(campaigns);
+const { campaigns, overview } = demoCampaignReports["last-click"];
 const categories = [
 	{ key: "sales", label: "Sales" },
 	{ key: "netRevenue", label: "Net sales" },
@@ -47,7 +38,7 @@ export function CampaignPreview() {
 	const locale = useLocale();
 	const [view, setView] = useState<"returns" | "costs">("returns");
 	const money = (value: number | null) =>
-		value === null ? "—" : formatMoney(value, example.currency, locale);
+		value === null ? "—" : formatMoney(value, demoCurrency, locale);
 	const isReturns = view === "returns";
 	return (
 		<div className={styles.window} data-test="campaign-preview">
@@ -102,12 +93,12 @@ export function CampaignPreview() {
 				>
 					<div className={styles.heading}>
 						<h2>Campaign overview</h2>
-						<time dateTime={example.spend[0].date}>
+						<time dateTime={demoReportDate}>
 							<CalendarDaysIcon size={13} aria-hidden="true" />
 							{new Intl.DateTimeFormat(locale, {
 								dateStyle: "medium",
 								timeZone: "UTC",
-							}).format(new Date(example.spend[0].date))}
+							}).format(new Date(demoReportDate))}
 						</time>
 					</div>
 					<div className={styles.summary}>
@@ -170,7 +161,7 @@ export function CampaignPreview() {
 								{isReturns
 									? "Campaign returns"
 									: "Campaign costs"}{" "}
-								in {example.currency}
+								in {demoCurrency}
 							</caption>
 							<thead>
 								<tr>

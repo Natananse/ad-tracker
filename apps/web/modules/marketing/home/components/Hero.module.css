@@ -3,18 +3,39 @@
 	isolation: isolate;
 	overflow: hidden;
 	background: #cbe9ff;
-	background-image:
-		linear-gradient(
-			to bottom,
-			rgb(249 254 255 / 58%),
-			rgb(246 255 255 / 68%) 29%,
-			rgb(255 255 255 / 7%) 72%
-		),
-		url("/images/attribution-sky.webp");
-	background-size: cover;
-	background-position: center;
 	color: #10141e;
 	padding: clamp(124px, 10.2vw, 178px) 20px 0;
+}
+.sky {
+	--sky-travel: clamp(16px, 3vw, 44px);
+	position: absolute;
+	inset: -10px calc(0px - var(--sky-travel));
+	z-index: -2;
+	background: url("/images/attribution-sky.webp") center / cover no-repeat;
+	pointer-events: none;
+	animation: sky-drift 18s ease-in-out -7s infinite alternate;
+	animation-play-state: var(--landing-motion-state, running);
+}
+@keyframes sky-drift {
+	from {
+		transform: translate3d(calc(0px - var(--sky-travel)), 8px, 0);
+	}
+	to {
+		transform: translate3d(var(--sky-travel), -8px, 0);
+	}
+}
+.hero::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	background: linear-gradient(
+		to bottom,
+		rgb(249 254 255 / 58%),
+		rgb(246 255 255 / 68%) 29%,
+		rgb(255 255 255 / 7%) 72%
+	);
+	pointer-events: none;
 }
 .hero::after {
 	content: "";
@@ -144,9 +165,9 @@
 @media (max-width: 720px) {
 	.hero {
 		padding: 112px 16px 0;
-		background-position:
-			center,
-			5.5% center;
+	}
+	.sky {
+		background-position: 5.5% center;
 	}
 	.copy h1 {
 		font-size: clamp(2.65rem, 8.9vw, 3.8rem);
@@ -184,6 +205,10 @@
 	}
 }
 @media (prefers-reduced-motion: reduce) {
+	.sky {
+		inset: 0;
+		animation: none;
+	}
 	.actions a {
 		transition: none;
 	}

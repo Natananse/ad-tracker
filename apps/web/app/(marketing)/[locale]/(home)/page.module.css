@@ -1,0 +1,3 @@
+.home:has(> [data-landing-motion="paused"]) {
+	--landing-motion-state: paused;
+}

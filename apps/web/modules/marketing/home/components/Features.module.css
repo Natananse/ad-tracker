@@ -65,7 +65,7 @@
 	align-items: center;
 	gap: 10px;
 }
-.heading svg {
+.heading > svg {
 	width: 30px;
 	height: 30px;
 	flex-shrink: 0;
@@ -79,6 +79,16 @@
 	letter-spacing: -0.035em;
 	font-weight: 600;
 }
+.heading h3 a {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	text-underline-offset: 3px;
+}
+.heading h3 a:hover,
+.heading h3 a:focus-visible {
+	text-decoration: underline;
+}
 .card p {
 	margin: 12px 0 20px;
 	color: var(--muted-foreground);
@@ -90,7 +100,7 @@
 	color: white;
 	border-color: #446ee9;
 }
-.highlight .heading svg {
+.highlight .heading > svg {
 	background: white;
 	color: #2449cd;
 }

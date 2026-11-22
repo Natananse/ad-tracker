@@ -12,6 +12,11 @@ import styles from "./Hero.module.css";
 export function Hero() {
 	return (
 		<section className={styles.hero} aria-labelledby="home-title">
+			<div
+				className={styles.sky}
+				data-test="hero-sky"
+				aria-hidden="true"
+			/>
 			<div className={styles.copy}>
 				<h1 id="home-title">
 					See the profit behind <span>every campaign.</span>

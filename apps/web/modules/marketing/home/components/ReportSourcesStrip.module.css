@@ -94,15 +94,19 @@
 }
 
 .control {
-	display: grid;
+	display: inline-flex;
 	flex: none;
-	place-items: center;
-	width: 2.75rem;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
 	height: 2.75rem;
+	padding-inline: 0.8rem;
 	border: 1px solid #d9dfe7;
-	border-radius: 50%;
+	border-radius: 999px;
 	background: #fff;
 	color: #44505e;
+	font-size: 0.78rem;
+	font-weight: 550;
 	cursor: pointer;
 }
 
@@ -115,7 +119,7 @@
 	outline-offset: 2px;
 }
 
-.strip[data-paused="true"] .track {
+.strip[data-landing-motion="paused"] .track {
 	animation-play-state: paused;
 }
 

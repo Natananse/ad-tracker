@@ -22,12 +22,13 @@ const sources = [
 export function ReportSourcesStrip() {
 	const [paused, setPaused] = useState(false);
 	const ControlIcon = paused ? PlayIcon : PauseIcon;
+	const motionLabel = paused ? "Resume page motion" : "Pause page motion";
 
 	return (
 		<section
 			aria-label="Report sources and file formats"
 			className={styles.strip}
-			data-paused={paused}
+			data-landing-motion={paused ? "paused" : "running"}
 			data-test="report-sources"
 		>
 			<div className={styles.inner}>
@@ -56,10 +57,12 @@ export function ReportSourcesStrip() {
 				<button
 					type="button"
 					className={styles.control}
-					aria-label={paused ? "Resume scrolling" : "Pause scrolling"}
+					aria-label={motionLabel}
+					title={motionLabel}
 					onClick={() => setPaused(!paused)}
 				>
 					<ControlIcon aria-hidden="true" size={15} strokeWidth={2} />
+					<span>{paused ? "Resume motion" : "Pause motion"}</span>
 				</button>
 			</div>
 		</section>

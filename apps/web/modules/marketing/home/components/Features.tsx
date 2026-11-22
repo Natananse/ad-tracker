@@ -1,5 +1,6 @@
 import { LocaleLink } from "@i18n/routing";
 import {
+	ArrowDownRightIcon,
 	ArrowRightIcon,
 	ChartColumnIcon,
 	MousePointerClickIcon,
@@ -34,7 +35,15 @@ export function Features() {
 					<article className={styles.card}>
 						<div className={styles.heading}>
 							<ReceiptTextIcon aria-hidden="true" />
-							<h3>Account for refunds</h3>
+							<h3>
+								<a href="#report-inputs">
+									Account for refunds{" "}
+									<ArrowDownRightIcon
+										size={16}
+										aria-hidden="true"
+									/>
+								</a>
+							</h3>
 						</div>
 						<p>
 							See how much of each campaign’s sales you kept after
@@ -61,7 +70,15 @@ export function Features() {
 					<article className={`${styles.card} ${styles.highlight}`}>
 						<div className={styles.heading}>
 							<MousePointerClickIcon aria-hidden="true" />
-							<h3>Trace each order</h3>
+							<h3>
+								<a href="#campaign-comparison">
+									Trace each order{" "}
+									<ArrowDownRightIcon
+										size={16}
+										aria-hidden="true"
+									/>
+								</a>
+							</h3>
 						</div>
 						<p>
 							Switch between first and last click to see which
@@ -88,7 +105,15 @@ export function Features() {
 					<article className={styles.card}>
 						<div className={styles.heading}>
 							<ChartColumnIcon aria-hidden="true" />
-							<h3>Compare what’s left</h3>
+							<h3>
+								<a href="#attribution-flow">
+									Compare what’s left{" "}
+									<ArrowDownRightIcon
+										size={16}
+										aria-hidden="true"
+									/>
+								</a>
+							</h3>
 						</div>
 						<p>
 							Compare the amount each campaign contributes after
