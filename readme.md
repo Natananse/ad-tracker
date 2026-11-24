@@ -65,6 +65,16 @@ PostgreSQL stores one `campaign_report` per workspace. Each owns `campaign_daily
 
 ## Configuration
 
+### Neon database setup
+
+For local development against Neon, use the **Connect** dialog on the development branch. Set `DATABASE_URL` in the root `.env.local` to the pooled URL and `DIRECT_URL` to the direct URL for the same database, role, and branch. The app uses the pool for signed-in requests. The Prisma CLI uses the direct connection when applying schema changes. [Neon connection guide](https://neon.com/docs/connect/connection-pooling)
+
+Apply the checked-in migrations with `pnpm --filter @repo/database migrate:deploy`. This creates the tables for Better Auth, workspaces, and campaign reports on a fresh database and records which migrations have run. Run `pnpm dev` to load the settings, or restart the app if it was already running. Local email verification uses the configured SMTP service. Start the local inbox with `docker compose --env-file .env.local up -d mailpit`, or run the Mailpit binary with `mailpit --listen 127.0.0.1:8025 --smtp 127.0.0.1:1025`.
+
+For a hosted deployment, set the production branch's pooled URL on the web service and supply its direct URL to the migration job. Run the same migration command for that branch before starting the new app release. Each environment has its own users and saved reports. The public demo reads a bundled sample. Signing in, saving an imported campaign report, and reloading it exercises the database connection.
+
+### Application settings
+
 The web server validates its environment during startup and reports the names of invalid settings. Set `DATABASE_URL` to the application's PostgreSQL connection. For schema commands against a pooled database, set `DIRECT_URL` to a direct connection. Local schema commands use `DATABASE_URL` when `DIRECT_URL` is empty. The local bootstrap targets the Compose development database. Use deployment-specific credentials and migration tooling for deployed databases.
 
 `config/index.ts` defines application features, locale defaults, session lifetimes, organization settings and plan definitions. `packages/payments/provider/index.ts` selects the active payment adapter. The default SMTP provider reads `EMAIL_SERVER_HOST`, `EMAIL_SERVER_PORT`, and `MAIL_FROM`. Set both SMTP authentication fields when your server requires them.

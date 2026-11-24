@@ -22,6 +22,7 @@
 		"generate": "prisma generate --no-hints",
 		"push": "prisma db push --skip-generate",
 		"migrate": "prisma migrate dev",
+		"migrate:deploy": "prisma migrate deploy",
 		"studio": "prisma studio",
 		"seed": "prisma db seed",
 		"type-check": "tsc --noEmit"
