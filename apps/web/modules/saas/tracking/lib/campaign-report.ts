@@ -32,6 +32,7 @@ export interface CampaignDay {
 
 export interface CampaignFilter {
 	currency: string;
+	channel?: string;
 	start: string;
 	end: string;
 }
@@ -221,15 +222,23 @@ function addKnown(total: number | null, value: number | null) {
 }
 
 export function campaignOverview(summaries: CampaignSummary[]) {
-	let netRevenue = 0;
+	let sales = 0;
+	let refunds = 0;
+	let costs: number | null = 0;
 	let spend: number | null = 0;
 	let contribution: number | null = 0;
 	for (const campaign of summaries) {
-		netRevenue += campaign.netRevenue;
+		sales += campaign.sales;
+		refunds += campaign.refunds;
+		costs = addKnown(costs, campaign.costs);
 		spend = addKnown(spend, campaign.spend);
 		contribution = addKnown(contribution, campaign.contribution);
 	}
+	const netRevenue = sales - refunds;
 	return {
+		sales,
+		refunds,
+		costs,
 		netRevenue,
 		spend,
 		contribution,
@@ -245,6 +254,7 @@ export function buildCampaignReport(
 	for (const row of rows) {
 		if (
 			row.currency !== filter.currency ||
+			(filter.channel && row.channel !== filter.channel) ||
 			(filter.start && row.date < filter.start) ||
 			(filter.end && row.date > filter.end)
 		) {

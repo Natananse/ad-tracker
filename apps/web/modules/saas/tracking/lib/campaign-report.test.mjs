@@ -40,6 +40,9 @@ test("overview weights return by spend and marks partial totals incomplete", () 
 		),
 	);
 	assert.deepEqual(campaignOverview(buildCampaignReport(rows, filter)), {
+		sales: 38000,
+		refunds: 2000,
+		costs: 6000,
 		netRevenue: 36000,
 		spend: 7000,
 		contribution: 23000,
@@ -52,6 +55,7 @@ test("overview weights return by spend and marks partial totals incomplete", () 
 	);
 	rows[0].spend = null;
 	const unknown = campaignOverview(buildCampaignReport(rows, filter));
+	assert.equal(unknown.costs, null);
 	assert.equal(unknown.spend, null);
 	assert.equal(unknown.roas, null);
 });
@@ -73,6 +77,14 @@ test("comparison uses summed amounts, inclusive dates and one currency", () => {
 	});
 	assert.equal(report.length, 2);
 	const meta = report.find((row) => row.channel === "Meta");
+	assert.deepEqual(
+		buildCampaignReport(rows, {
+			...filter,
+			end: "2026-11-02",
+			channel: "Meta",
+		}),
+		[meta],
+	);
 	assert.equal(meta.days, 2);
 	assert.equal(meta.netRevenue, 12000);
 	assert.equal(meta.roas, 2);
