@@ -6,7 +6,13 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Alert } from "@ui/components/alert";
 import { Button } from "@ui/components/button";
 import { Card } from "@ui/components/card";
-import { UploadIcon } from "lucide-react";
+import {
+	Building2Icon,
+	DownloadIcon,
+	FileSpreadsheetIcon,
+	FolderIcon,
+	UploadIcon,
+} from "lucide-react";
 import { useLocale } from "next-intl";
 import { type ChangeEvent, useRef, useState } from "react";
 import {
@@ -59,7 +65,8 @@ export function CampaignReport({
 	const rows = source?.rows ?? [];
 	const busy = reading || save.isPending;
 	const displayKey = preview ? `preview-${version}` : saved?.revision;
-	const workspace = organizationId ? "organization" : "personal workspace";
+	const firstReport = saved && !saved.revision && !preview;
+	const WorkspaceIcon = organizationId ? Building2Icon : FolderIcon;
 
 	function showPreview(data: Omit<ReportPreview, "expectedRevision">) {
 		setPreview({ ...data, expectedRevision: saved?.revision ?? null });
@@ -148,33 +155,55 @@ export function CampaignReport({
 	}
 
 	return (
-		<div className="min-w-0 space-y-5">
-			<header>
-				<h1 className="text-3xl font-bold tracking-tight">
+		<div className="min-w-0 space-y-6">
+			<header className="space-y-2">
+				<p className="mb-3 flex items-center gap-2 font-medium text-muted-foreground text-sm">
+					<WorkspaceIcon className="size-4" aria-hidden="true" />
+					{organizationId
+						? "Organization workspace"
+						: "Personal workspace"}
+				</p>
+				<h1 className="font-semibold text-3xl tracking-tight sm:text-4xl">
 					Campaign report
 				</h1>
-				<p className="mt-2 text-muted-foreground">
-					Compare campaign revenue, ad spend, and contribution after
-					refunds.
+				<p className="max-w-2xl text-pretty text-muted-foreground">
+					Compare what each campaign earns after refunds, ad spend,
+					and variable costs.
 				</p>
 			</header>
-			<Card className="space-y-4 p-4 sm:p-6">
-				<div className="flex flex-wrap items-start justify-between gap-4">
-					<div className="min-w-0 space-y-1">
-						<h2 className="text-lg font-semibold">Report data</h2>
-						<p className="text-sm text-muted-foreground">
-							{preview?.sample
-								? "Sample data · Preview only"
-								: preview
-									? `Import preview · ${preview.name}`
-									: saved?.revision
-										? `Saved to your ${workspace}`
-										: report.isPending
-											? "Loading your saved report…"
-											: "Import daily campaign totals or preview an example."}
-							{rows.length > 0 &&
-								` · ${rows.length.toLocaleString(locale)} daily ${rows.length === 1 ? "record" : "records"}`}
-						</p>
+			<Card className="overflow-hidden">
+				<div className="relative isolate flex flex-wrap items-center justify-between gap-x-6 gap-y-4 border-b border-teal-900/10 bg-teal-50/80 p-5 sm:p-6 dark:border-teal-200/10 dark:bg-teal-950/35">
+					<div
+						aria-hidden="true"
+						className="pointer-events-none absolute inset-y-0 right-0 -z-10 hidden w-1/3 bg-[repeating-linear-gradient(90deg,currentColor_0_1px,transparent_1px_20px)] text-teal-900/[0.045] sm:block dark:text-teal-200/[0.055]"
+					/>
+					<div className="flex min-w-0 flex-1 basis-80 items-start gap-3">
+						<div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-teal-800/15 bg-card text-teal-800 dark:border-teal-300/20 dark:text-teal-300">
+							<FileSpreadsheetIcon
+								className="size-5"
+								aria-hidden="true"
+							/>
+						</div>
+						<div className="min-w-0 space-y-1">
+							<h2 className="font-semibold text-lg leading-tight">
+								{firstReport
+									? "Import your first report"
+									: "Report data"}
+							</h2>
+							<p className="break-words text-muted-foreground text-sm leading-relaxed">
+								{preview?.sample
+									? "Sample data · Preview only"
+									: preview
+										? `Import preview · ${preview.name}`
+										: saved?.revision
+											? "Saved report"
+											: report.isPending
+												? "Loading your saved report…"
+												: "Upload daily campaign totals as a CSV, or explore the example data."}
+								{rows.length > 0 &&
+									` · ${rows.length.toLocaleString(locale)} daily ${rows.length === 1 ? "record" : "records"}`}
+							</p>
+						</div>
 					</div>
 					<div className="flex flex-wrap gap-2">
 						<input
@@ -188,7 +217,12 @@ export function CampaignReport({
 						/>
 						<Button
 							type="button"
-							variant="outline"
+							variant={preview ? "outline" : "primary"}
+							className={
+								preview
+									? "bg-card"
+									: "bg-teal-800 text-white shadow-none hover:bg-teal-900 dark:bg-teal-300 dark:text-teal-950 dark:hover:bg-teal-200"
+							}
 							disabled={busy}
 							onClick={() => input.current?.click()}
 						>
@@ -198,6 +232,7 @@ export function CampaignReport({
 						<Button
 							type="button"
 							variant="outline"
+							className="bg-card"
 							disabled={busy}
 							onClick={() =>
 								showPreview({
@@ -213,138 +248,154 @@ export function CampaignReport({
 						</Button>
 					</div>
 				</div>
-				{preview && (
-					<div className="flex flex-wrap items-center gap-2">
-						{!preview.sample && saved?.canEdit && (
+				<div className="space-y-4 p-5 sm:px-6">
+					{preview && (
+						<div className="flex flex-wrap items-center gap-2">
+							{!preview.sample && saved?.canEdit && (
+								<Button
+									type="button"
+									variant="primary"
+									className="bg-teal-800 text-white shadow-none hover:bg-teal-900 dark:bg-teal-300 dark:text-teal-950 dark:hover:bg-teal-200"
+									disabled={
+										busy ||
+										preview.expectedRevision !==
+											saved.revision
+									}
+									loading={save.isPending}
+									onClick={savePreview}
+								>
+									{saved.revision
+										? "Replace saved report"
+										: "Save report"}
+								</Button>
+							)}
 							<Button
 								type="button"
-								variant="primary"
-								disabled={
-									busy ||
-									preview.expectedRevision !== saved.revision
-								}
-								loading={save.isPending}
-								onClick={savePreview}
+								variant="ghost"
+								disabled={busy}
+								onClick={() => {
+									setPreview(null);
+									setAlert("");
+									setNotice("");
+								}}
 							>
-								{saved.revision
-									? "Replace saved report"
-									: "Save report"}
-							</Button>
-						)}
-						<Button
-							type="button"
-							variant="ghost"
-							disabled={busy}
-							onClick={() => {
-								setPreview(null);
-								setAlert("");
-								setNotice("");
-							}}
-						>
-							Close preview
-						</Button>
-					</div>
-				)}
-				{preview &&
-					!preview.sample &&
-					saved &&
-					preview.expectedRevision !== saved.revision &&
-					!alert && (
-						<Alert>
-							The saved report has changed. Close the preview to
-							review the latest version before importing again.
-						</Alert>
-					)}
-				{saved && !saved.canEdit && (
-					<p className="text-muted-foreground text-sm">
-						Organization owners and admins can save reports.
-					</p>
-				)}
-				{report.isError && (
-					<Alert variant="error">
-						Your saved report could not be loaded.{" "}
-						<button
-							type="button"
-							className="font-medium underline"
-							disabled={report.isFetching}
-							onClick={() => report.refetch()}
-						>
-							Retry
-						</button>
-					</Alert>
-				)}
-				{alert && <Alert variant="error">{alert}</Alert>}
-				<p role="status" className="text-sm empty:hidden">
-					{notice}
-				</p>
-				<OrderAttributionImport
-					key={displayKey}
-					source={source?.attributionSource ?? null}
-					busy={busy}
-					setBusy={setReading}
-					onPreview={(result, attributionSource) =>
-						showPreview({
-							name: "Order attribution",
-							sample: false,
-							rows: result.rows,
-							attribution: result,
-							attributionSource,
-						})
-					}
-				/>
-				<details className="border-t pt-3 text-sm">
-					<summary className="w-fit cursor-pointer font-medium">
-						CSV format and downloads
-					</summary>
-					<div className="mt-3 space-y-2 text-muted-foreground">
-						<p>
-							Use one row per date, channel, campaign, and
-							currency. Use YYYY-MM-DD dates, three-letter
-							currency codes, and decimal amounts without currency
-							symbols. Reports compare one currency at a time.
-						</p>
-						<p>
-							Enter merchandise sales after discounts, excluding
-							taxes and shipping. Enter refunds as positive
-							amounts. For spend and variable costs, use zero for
-							a confirmed zero and leave the amount blank when
-							unknown.
-						</p>
-						<p>
-							Variable costs include the cost of goods sold,
-							fulfillment, payment fees, and other per-order
-							expenses.
-						</p>
-						<div className="flex flex-wrap gap-2 pt-1">
-							<Button
-								type="button"
-								size="sm"
-								variant="outline"
-								onClick={() =>
-									downloadReportFile(
-										TEMPLATE_CSV,
-										"campaign-template.csv",
-									)
-								}
-							>
-								Download template
-							</Button>
-							<Button
-								type="button"
-								size="sm"
-								variant="outline"
-								onClick={() =>
-									downloadReportFile(
-										SAMPLE_CSV,
-										"campaign-example.csv",
-									)
-								}
-							>
-								Download example
+								Close preview
 							</Button>
 						</div>
+					)}
+					{preview &&
+						!preview.sample &&
+						saved &&
+						preview.expectedRevision !== saved.revision &&
+						!alert && (
+							<Alert>
+								The saved report has changed. Close the preview
+								to review the latest version before importing
+								again.
+							</Alert>
+						)}
+					{saved && !saved.canEdit && (
+						<p className="text-muted-foreground text-sm">
+							Organization owners and admins can save reports.
+						</p>
+					)}
+					{report.isError && (
+						<Alert variant="error">
+							Your saved report could not be loaded.{" "}
+							<button
+								type="button"
+								className="font-medium underline"
+								disabled={report.isFetching}
+								onClick={() => report.refetch()}
+							>
+								Retry
+							</button>
+						</Alert>
+					)}
+					{alert && <Alert variant="error">{alert}</Alert>}
+					<p role="status" className="text-sm empty:hidden">
+						{notice}
+					</p>
+					<div className="[&>details]:border-0 [&>details]:pt-0 [&_summary]:rounded-sm [&_summary]:focus-visible:outline-teal-700 dark:[&_summary]:focus-visible:outline-teal-300">
+						<OrderAttributionImport
+							key={displayKey}
+							source={source?.attributionSource ?? null}
+							busy={busy}
+							setBusy={setReading}
+							onPreview={(result, attributionSource) =>
+								showPreview({
+									name: "Order attribution",
+									sample: false,
+									rows: result.rows,
+									attribution: result,
+									attributionSource,
+								})
+							}
+						/>
 					</div>
-				</details>
+					<details className="border-t pt-3 text-sm">
+						<summary className="w-fit cursor-pointer rounded-sm font-medium focus-visible:outline-teal-700 dark:focus-visible:outline-teal-300">
+							CSV format and downloads
+						</summary>
+						<div className="mt-3 space-y-2 text-muted-foreground">
+							<p>
+								Use one row per date, channel, campaign, and
+								currency. Use YYYY-MM-DD dates, three-letter
+								currency codes, and decimal amounts without
+								currency symbols. Reports compare one currency
+								at a time.
+							</p>
+							<p>
+								Enter merchandise sales after discounts,
+								excluding taxes and shipping. Enter refunds as
+								positive amounts. For spend and variable costs,
+								use zero for a confirmed zero and leave the
+								amount blank when unknown.
+							</p>
+							<p>
+								Variable costs include the cost of goods sold,
+								fulfillment, payment fees, and other per-order
+								expenses.
+							</p>
+							<div className="flex flex-wrap gap-2 pt-1">
+								<Button
+									type="button"
+									size="sm"
+									variant="outline"
+									onClick={() =>
+										downloadReportFile(
+											TEMPLATE_CSV,
+											"campaign-template.csv",
+										)
+									}
+								>
+									<DownloadIcon
+										className="size-3.5"
+										aria-hidden="true"
+									/>
+									Download template
+								</Button>
+								<Button
+									type="button"
+									size="sm"
+									variant="outline"
+									onClick={() =>
+										downloadReportFile(
+											SAMPLE_CSV,
+											"campaign-example.csv",
+										)
+									}
+								>
+									<DownloadIcon
+										className="size-3.5"
+										aria-hidden="true"
+									/>
+									Download example
+								</Button>
+							</div>
+						</div>
+					</details>
+				</div>
 			</Card>
 			{rows.length > 0 && <ReportResults key={displayKey} rows={rows} />}
 			{source?.attribution && source.attributionSource && (
