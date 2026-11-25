@@ -18,12 +18,19 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@ui/components/dropdown-menu";
-import { ChevronsUpDownIcon, PlusIcon } from "lucide-react";
+import { cn } from "@ui/lib";
+import { ChevronsUpDownIcon, LayersIcon, PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { OrganizationLogo } from "./OrganizationLogo";
 
-export function OrganzationSelect({ className, isCollapsed }: { className?: string; isCollapsed?: boolean }) {
+export function OrganizationSelect({
+	className,
+	isCollapsed,
+}: {
+	className?: string;
+	isCollapsed?: boolean;
+}) {
 	const t = useTranslations();
 	const { user } = useSession();
 	const router = useRouter();
@@ -35,145 +42,67 @@ export function OrganzationSelect({ className, isCollapsed }: { className?: stri
 		return null;
 	}
 
-	if (isCollapsed) {
-		return (
-			<div className={className}>
-				<DropdownMenu>
-					<DropdownMenuTrigger className="hidden md:flex w-full items-center justify-center p-2 rounded-md border outline-none focus-visible:bg-primary/10">
-						{activeOrganization ? (
-							<OrganizationLogo
-								name={activeOrganization.name}
-								className="size-8"
-							/>
-						) : (
-							<UserAvatar
-								className="size-8"
-								name={user.name ?? ""}
-							/>
-						)}
-					</DropdownMenuTrigger>
-					<DropdownMenuContent className="w-full">
-						{!config.organizations.requireOrganization && (
-							<>
-								<DropdownMenuRadioGroup
-									value={activeOrganization?.id ?? user.id}
-									onValueChange={async (value: string) => {
-										if (value === user.id) {
-											await clearCache();
-											router.replace("/app");
-										}
-									}}
-								>
-									<DropdownMenuLabel className="text-foreground/60 text-xs">
-										{t(
-											"organizations.organizationSelect.personalAccount",
-										)}
-									</DropdownMenuLabel>
-									<DropdownMenuRadioItem
-										value={user.id}
-										className="flex cursor-pointer items-center justify-center gap-2 pl-3"
-									>
-										<div className="flex flex-1 items-center justify-start gap-2">
-											<UserAvatar
-												className="size-8"
-												name={user.name ?? ""}
-											/>
-											{user.name}
-										</div>
-									</DropdownMenuRadioItem>
-								</DropdownMenuRadioGroup>
-								<DropdownMenuSeparator />
-							</>
-						)}
-						<DropdownMenuRadioGroup
-							value={activeOrganization?.slug}
-							onValueChange={async (organizationSlug: string) => {
-								await clearCache();
-								setActiveOrganization(organizationSlug);
-							}}
-						>
-							<DropdownMenuLabel className="text-foreground/60 text-xs">
-								{t(
-									"organizations.organizationSelect.organizations",
-								)}
-							</DropdownMenuLabel>
-							{allOrganizations?.map((organization) => (
-								<DropdownMenuRadioItem
-									key={organization.slug}
-									value={organization.slug}
-									className="flex cursor-pointer items-center justify-center gap-2 pl-3"
-								>
-									<div className="flex flex-1 items-center justify-start gap-2">
-										<OrganizationLogo
-											className="size-8"
-											name={organization.name}
-										/>
-										{organization.name}
-									</div>
-								</DropdownMenuRadioItem>
-							))}
-						</DropdownMenuRadioGroup>
-
-						{config.organizations.enableUsersToCreateOrganizations && (
-							<DropdownMenuGroup>
-								<DropdownMenuItem
-									asChild
-									className="text-primary! cursor-pointer text-sm"
-								>
-									<Link href="/new-organization">
-										<PlusIcon className="mr-2 size-6 rounded-md bg-primary/20 p-1" />
-										{t(
-											"organizations.organizationSelect.createNewOrganization",
-										)}
-									</Link>
-								</DropdownMenuItem>
-							</DropdownMenuGroup>
-						)}
-					</DropdownMenuContent>
-				</DropdownMenu>
-			</div>
-		);
-	}
+	const workspaceName =
+		activeOrganization?.name ?? t("app.menu.personalWorkspace");
+	const switchLabel = t("app.menu.switchWorkspace", { name: workspaceName });
 
 	return (
 		<div className={className}>
 			<DropdownMenu>
-				<DropdownMenuTrigger className="flex w-full items-center justify-between gap-2 rounded-md border p-2 text-left outline-none focus-visible:bg-primary/10 focus-visible:ring-none">
-					<div className="flex flex-1 items-center justify-start gap-2 text-sm overflow-hidden">
-						{activeOrganization ? (
-							<>
-								<OrganizationLogo
-									name={activeOrganization.name}
-									className="hidden size-6 sm:block"
-								/>
-								<span className="block flex-1 truncate">
-									{activeOrganization.name}
-								</span>
-								{config.organizations.enableBilling && (
-									<ActivePlanBadge
-										organizationId={activeOrganization.id}
-									/>
-								)}
-							</>
-						) : (
-							<>
-								<UserAvatar
-									className="hidden size-6 sm:block"
-									name={user.name ?? ""}
-								/>
-								<span className="block truncate">
-									{user.name}
-								</span>
-								{config.users.enableBilling && (
-									<ActivePlanBadge />
-								)}
-							</>
+				<DropdownMenuTrigger
+					aria-label={switchLabel}
+					title={switchLabel}
+					className={cn(
+						"flex min-h-10 w-full items-center gap-2 rounded-lg border bg-background px-2 text-left text-sm font-medium hover:border-primary/40 focus-visible:outline-2 focus-visible:outline-ring",
+						isCollapsed && "md:justify-center md:px-0",
+					)}
+				>
+					{activeOrganization ? (
+						<OrganizationLogo
+							className="size-6 shrink-0"
+							name={activeOrganization.name}
+						/>
+					) : (
+						<LayersIcon
+							className="size-4 shrink-0 text-indigo-600 dark:text-indigo-300"
+							aria-hidden="true"
+						/>
+					)}
+					<span
+						className={cn(
+							"min-w-0 flex-1 truncate",
+							isCollapsed && "md:sr-only",
 						)}
-					</div>
-
-					<ChevronsUpDownIcon className="block size-4 opacity-50" />
+					>
+						{workspaceName}
+					</span>
+					{!isCollapsed && (
+						<span className="hidden shrink-0 xl:inline-flex">
+							{activeOrganization
+								? config.organizations.enableBilling && (
+										<ActivePlanBadge
+											organizationId={
+												activeOrganization.id
+											}
+										/>
+									)
+								: config.users.enableBilling && (
+										<ActivePlanBadge />
+									)}
+						</span>
+					)}
+					<ChevronsUpDownIcon
+						className={cn(
+							"size-3.5 shrink-0 text-muted-foreground",
+							isCollapsed && "md:hidden",
+						)}
+						aria-hidden="true"
+					/>
 				</DropdownMenuTrigger>
-				<DropdownMenuContent className="w-full">
+				<DropdownMenuContent
+					align="start"
+					className="max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-52 max-w-[calc(100vw-2rem)] overflow-y-auto"
+				>
 					{!config.organizations.requireOrganization && (
 						<>
 							<DropdownMenuRadioGroup
@@ -194,12 +123,14 @@ export function OrganzationSelect({ className, isCollapsed }: { className?: stri
 									value={user.id}
 									className="flex cursor-pointer items-center justify-center gap-2 pl-3"
 								>
-									<div className="flex flex-1 items-center justify-start gap-2">
+									<div className="flex min-w-0 flex-1 items-center gap-2">
 										<UserAvatar
-											className="size-8"
+											className="size-8 shrink-0"
 											name={user.name ?? ""}
 										/>
-										{user.name}
+										<span className="truncate">
+											{user.name}
+										</span>
 									</div>
 								</DropdownMenuRadioItem>
 							</DropdownMenuRadioGroup>
@@ -213,23 +144,27 @@ export function OrganzationSelect({ className, isCollapsed }: { className?: stri
 							setActiveOrganization(organizationSlug);
 						}}
 					>
-						<DropdownMenuLabel className="text-foreground/60 text-xs">
-							{t(
-								"organizations.organizationSelect.organizations",
-							)}
-						</DropdownMenuLabel>
+						{!!allOrganizations?.length && (
+							<DropdownMenuLabel className="text-foreground/60 text-xs">
+								{t(
+									"organizations.organizationSelect.organizations",
+								)}
+							</DropdownMenuLabel>
+						)}
 						{allOrganizations?.map((organization) => (
 							<DropdownMenuRadioItem
 								key={organization.slug}
 								value={organization.slug}
 								className="flex cursor-pointer items-center justify-center gap-2 pl-3"
 							>
-								<div className="flex flex-1 items-center justify-start gap-2">
+								<div className="flex min-w-0 flex-1 items-center gap-2">
 									<OrganizationLogo
-										className="size-8"
+										className="size-8 shrink-0"
 										name={organization.name}
 									/>
-									{organization.name}
+									<span className="truncate">
+										{organization.name}
+									</span>
 								</div>
 							</DropdownMenuRadioItem>
 						))}

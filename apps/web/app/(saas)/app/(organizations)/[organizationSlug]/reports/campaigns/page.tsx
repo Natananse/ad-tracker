@@ -25,6 +25,7 @@ export default async function OrganizationCampaignReportPage({
 			key={`${session.user.id}/${organization.id}`}
 			viewerId={session.user.id}
 			organizationId={organization.id}
+			organizationName={organization.name}
 		/>
 	);
 }

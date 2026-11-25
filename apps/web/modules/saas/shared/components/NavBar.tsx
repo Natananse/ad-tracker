@@ -1,250 +1,218 @@
 "use client";
+
 import { config } from "@repo/config";
 import { useSession } from "@saas/auth/hooks/use-session";
-import { useActiveOrganization } from "@saas/organizations/hooks/use-active-organization";
+import { OrganizationSelect } from "@saas/organizations/components/OrganizationSelect";
 import { UserMenu } from "@saas/shared/components/UserMenu";
 import { Logo } from "@shared/components/Logo";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@ui/components/dropdown-menu";
 import { cn } from "@ui/lib";
 import {
 	BotMessageSquareIcon,
 	ChartColumnIcon,
-	ChevronRightIcon,
-	HomeIcon,
+	MenuIcon,
 	PanelLeftCloseIcon,
 	PanelLeftOpenIcon,
 	SettingsIcon,
-	UserCog2Icon,
+	ShieldCheckIcon,
 	UserCogIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState, useEffect } from "react";
-import { OrganzationSelect } from "../../organizations/components/OrganizationSelect";
 
-export function NavBar({ onCollapsedChange }: { onCollapsedChange?: (collapsed: boolean) => void }) {
-	const t = useTranslations();
+export function NavBar({
+	collapsed,
+	onToggle,
+}: {
+	collapsed: boolean;
+	onToggle: () => void;
+}) {
+	const t = useTranslations("app.menu");
 	const pathname = usePathname();
+	const { organizationSlug } = useParams<{ organizationSlug?: string }>();
 	const { user } = useSession();
-	const { activeOrganization } = useActiveOrganization();
-	const [isCollapsed, setIsCollapsed] = useState(false);
+	const rail = config.ui.saas.useSidebarLayout;
+	const compact = rail && collapsed;
+	const base = organizationSlug ? `/app/${organizationSlug}` : "/app";
+	const report = `${base}/reports/campaigns`;
 
-	useEffect(() => {
-		const saved = localStorage.getItem("sidebar-collapsed");
-		if (saved !== null) {
-			const collapsed = saved === "true";
-			setIsCollapsed(collapsed);
-			onCollapsedChange?.(collapsed);
-		}
-	}, [onCollapsedChange]);
-
-	const toggleCollapsed = () => {
-		const newState = !isCollapsed;
-		setIsCollapsed(newState);
-		localStorage.setItem("sidebar-collapsed", String(newState));
-		onCollapsedChange?.(newState);
-	};
-
-	const { useSidebarLayout } = config.ui.saas;
-
-	const basePath = activeOrganization
-		? `/app/${activeOrganization.slug}`
-		: "/app";
-
-	const menuItems = [
+	const items = [
+		{ href: report, label: t("campaignReport"), icon: ChartColumnIcon },
 		{
-			label: t("app.menu.start"),
-			href: basePath,
-			icon: HomeIcon,
-			isActive: pathname === basePath,
-		},
-		{
-			label: t("app.menu.campaignReport"),
-			href: `${basePath}/reports/campaigns`,
-			icon: ChartColumnIcon,
-			isActive: pathname === `${basePath}/reports/campaigns`,
-		},
-		{
-			label: t("app.menu.aiChatbot"),
-			href: activeOrganization
-				? `/app/${activeOrganization.slug}/chatbot`
-				: "/app/chatbot",
+			href: `${base}/chatbot`,
+			label: t("aiChatbot"),
 			icon: BotMessageSquareIcon,
-			isActive: pathname.includes("/chatbot"),
 		},
-		...(activeOrganization && !config.organizations.hideOrganization
+		...(organizationSlug && !config.organizations.hideOrganization
 			? [
 					{
-						label: t("app.menu.organizationSettings"),
-						href: `${basePath}/settings`,
+						href: `${base}/settings`,
+						label: t("organizationSettings"),
 						icon: SettingsIcon,
-						isActive: pathname.startsWith(`${basePath}/settings/`),
 					},
 				]
 			: []),
 		{
-			label: t("app.menu.accountSettings"),
 			href: "/app/settings",
-			icon: UserCog2Icon,
-			isActive: pathname.startsWith("/app/settings/"),
+			label: t("accountSettings"),
+			icon: UserCogIcon,
 		},
 		...(user?.role === "admin"
-			? [
-					{
-						label: t("app.menu.admin"),
-						href: "/app/admin",
-						icon: UserCogIcon,
-						isActive: pathname.startsWith("/app/admin/"),
-					},
-				]
+			? [{ href: "/app/admin", label: t("admin"), icon: ShieldCheckIcon }]
 			: []),
 	];
+	const toggleLabel = t(compact ? "expandSidebar" : "collapseSidebar");
+	const ToggleIcon = compact ? PanelLeftOpenIcon : PanelLeftCloseIcon;
+	const isActive = (href: string) =>
+		pathname === href || pathname.startsWith(`${href}/`);
 
 	return (
 		<nav
-			className={cn("w-full transition-all duration-300", {
-				"w-full md:fixed md:top-0 md:left-0 md:h-full md:w-[280px]":
-					useSidebarLayout && !isCollapsed,
-				"w-full md:fixed md:top-0 md:left-0 md:h-full md:w-[80px]":
-					useSidebarLayout && isCollapsed,
-			})}
+			aria-label={t("workspaceNavigation")}
+			className={cn(
+				"border-b bg-card",
+				rail &&
+					"md:sticky md:top-0 md:h-dvh md:flex-none md:overflow-y-auto md:border-r md:border-b-0",
+				rail && (compact ? "md:w-[4.5rem]" : "md:w-[17rem]"),
+			)}
 		>
 			<div
-				className={cn("container max-w-6xl py-4", {
-					"container max-w-6xl py-4 md:flex md:h-full md:flex-col md:px-6 md:pt-6 md:pb-0":
-						useSidebarLayout,
-				})}
+				className={cn(
+					"mx-auto flex max-w-[90rem] flex-wrap items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-5",
+					rail &&
+						"md:h-full md:flex-nowrap md:flex-col md:items-stretch md:px-3 md:py-5",
+				)}
 			>
-				<div className="flex flex-wrap items-center justify-between gap-4">
-					<div
-						className={cn("flex items-center gap-4 md:gap-2", {
-							"md:flex md:w-full md:flex-col md:items-stretch md:align-stretch":
-								useSidebarLayout,
-						})}
-					>
-						<div className="flex items-center justify-between w-full">
-							<Link href="/app" className={cn("block", {
-								"md:mx-auto": useSidebarLayout && isCollapsed,
-							})}>
-								<Logo 
-									withLabel={!isCollapsed}
-									className={cn({
-										"md:w-8": useSidebarLayout && isCollapsed,
-									})} 
-								/>
-							</Link>
-
-							{useSidebarLayout && (
-								<button
-									onClick={toggleCollapsed}
-									className="hidden md:block p-1 hover:bg-primary/10 rounded"
-									type="button"
-								>
-									{isCollapsed ? (
-										<PanelLeftOpenIcon className="size-4" />
-									) : (
-										<PanelLeftCloseIcon className="size-4" />
-									)}
-								</button>
-							)}
-						</div>
-
-						{config.organizations.enable &&
-							!config.organizations.hideOrganization && (
-								<>
-									<span
-										className={cn(
-											"hidden opacity-30 md:block",
-											{
-												"md:hidden": useSidebarLayout,
-											},
-										)}
-									>
-										<ChevronRightIcon className="size-4" />
-									</span>
-
-									<OrganzationSelect
-										className={cn({
-											"md:-mx-2 md:mt-2":
-												useSidebarLayout,
-										})}
-										isCollapsed={isCollapsed}
-									/>
-								</>
-							)}
-					</div>
-
-					<div
+				<Link
+					href={report}
+					aria-label={config.appName}
+					className={cn(
+						"flex shrink-0 items-center rounded-md focus-visible:outline-2 focus-visible:outline-ring",
+						rail && "md:mb-3 md:self-start md:px-1",
+						compact && "md:self-center md:px-0",
+					)}
+				>
+					<Logo
 						className={cn(
-							"mr-0 ml-auto flex items-center justify-end gap-4",
-							{
-								"md:hidden": useSidebarLayout,
-							},
+							"max-sm:[&>span:last-child]:sr-only",
+							compact && "md:[&>span:last-child]:sr-only",
 						)}
-					>
-						<UserMenu />
-					</div>
-				</div>
+					/>
+				</Link>
+
+				{config.organizations.enable &&
+					!config.organizations.hideOrganization && (
+						<OrganizationSelect
+							className={cn(
+								"mr-auto min-w-0 max-w-60 flex-1",
+								rail && "md:mr-0 md:max-w-none md:flex-none",
+							)}
+							isCollapsed={compact}
+						/>
+					)}
 
 				<ul
 					className={cn(
-						"no-scrollbar -mx-4 -mb-4 mt-6 flex list-none items-center justify-start gap-4 overflow-x-auto px-4 text-sm",
-						{
-							"md:mx-0 md:my-4 md:flex md:flex-col md:items-stretch md:gap-1 md:px-0":
-								useSidebarLayout && !isCollapsed,
-							"md:mx-0 md:my-4 md:flex md:flex-col md:items-center md:gap-1 md:px-0":
-								useSidebarLayout && isCollapsed,
-						},
+						"hidden md:order-last md:flex md:w-full md:flex-wrap md:gap-1",
+						rail && "md:order-none md:mt-3 md:flex-col",
 					)}
 				>
-					{menuItems.map((menuItem) => (
-						<li key={menuItem.href} className={cn({
-							"md:w-full md:flex md:justify-center": useSidebarLayout && isCollapsed,
-						})}>
+					{items.map(({ href, label, icon: Icon }, index) => (
+						<li
+							key={href}
+							className={cn(
+								rail && index === 1 && "mt-3 border-t pt-3",
+							)}
+						>
 							<Link
-								href={menuItem.href}
+								href={href}
+								aria-current={
+									isActive(href) ? "page" : undefined
+								}
+								title={compact ? label : undefined}
 								className={cn(
-									"flex items-center gap-2 whitespace-nowrap border-b-2 px-1 pb-3",
-									[
-										menuItem.isActive
-											? "border-primary font-bold"
-											: "border-transparent",
-									],
-									{
-										"md:-mx-6 md:border-b-0 md:border-l-2 md:px-6 md:py-2":
-											useSidebarLayout && !isCollapsed,
-										"md:border-b-0 md:border-l-0 md:p-2 md:rounded-md md:hover:bg-primary/10":
-											useSidebarLayout && isCollapsed,
-									},
+									"flex min-h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring aria-[current=page]:bg-indigo-50 aria-[current=page]:text-indigo-800 dark:aria-[current=page]:bg-indigo-400/15 dark:aria-[current=page]:text-indigo-200",
+									compact && "justify-center px-1",
 								)}
-								prefetch
-								title={isCollapsed ? menuItem.label : undefined}
 							>
-								<menuItem.icon
-									className={`size-4 shrink-0 ${
-										menuItem.isActive
-											? "text-primary"
-											: "opacity-50"
-									}`}
+								<Icon
+									className="size-[1.05rem] shrink-0"
+									aria-hidden="true"
 								/>
-								<span className={cn({
-									"md:hidden": useSidebarLayout && isCollapsed,
-								})}>{menuItem.label}</span>
+								<span
+									className={compact ? "sr-only" : undefined}
+								>
+									{label}
+								</span>
 							</Link>
 						</li>
 					))}
 				</ul>
 
+				<div className="ml-auto flex md:hidden">
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							aria-label={t("workspaceNavigation")}
+							className="grid size-10 place-items-center rounded-lg hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
+						>
+							<MenuIcon className="size-5" aria-hidden="true" />
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							{items.map(({ href, label, icon: Icon }) => (
+								<DropdownMenuItem key={href} asChild>
+									<Link
+										href={href}
+										aria-current={
+											isActive(href) ? "page" : undefined
+										}
+										className="min-h-10 gap-2.5 aria-[current=page]:font-semibold aria-[current=page]:text-primary"
+									>
+										<Icon
+											className="size-4"
+											aria-hidden="true"
+										/>
+										{label}
+									</Link>
+								</DropdownMenuItem>
+							))}
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
+
+				{rail && (
+					<button
+						type="button"
+						onClick={onToggle}
+						aria-label={toggleLabel}
+						title={toggleLabel}
+						className={cn(
+							"mt-auto hidden min-h-10 items-center gap-2.5 rounded-lg px-3 text-xs font-medium text-muted-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring md:flex",
+							compact && "justify-center px-0",
+						)}
+					>
+						<ToggleIcon
+							className="size-4 shrink-0"
+							aria-hidden="true"
+						/>
+						<span className={compact ? "sr-only" : undefined}>
+							{toggleLabel}
+						</span>
+					</button>
+				)}
+
 				<div
 					className={cn(
-						"-mx-4 md:-mx-6 mt-auto mb-0 hidden p-4 md:p-4",
-						{
-							"md:block": useSidebarLayout,
-							"md:flex md:justify-center": useSidebarLayout && isCollapsed,
-						},
+						"shrink-0",
+						rail ? "md:border-t md:pt-3" : "md:ml-auto",
 					)}
 				>
-					<UserMenu showUserName={!isCollapsed} />
+					<UserMenu showUserName={rail && !compact} />
 				</div>
 			</div>
 		</nav>

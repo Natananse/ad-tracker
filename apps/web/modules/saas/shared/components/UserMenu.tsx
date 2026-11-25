@@ -19,7 +19,7 @@ import {
 	DropdownMenuTrigger,
 } from "@ui/components/dropdown-menu";
 import {
-	BookIcon,
+	ChartColumnIcon,
 	HardDriveIcon,
 	HomeIcon,
 	LogOutIcon,
@@ -74,31 +74,36 @@ export function UserMenu({ showUserName }: { showUserName?: boolean }) {
 		return null;
 	}
 
-	const { name, email, image } = user;
+	const { name, email } = user;
 
 	return (
 		<DropdownMenu modal={false}>
 			<DropdownMenuTrigger asChild>
 				<button
 					type="button"
-					className="flex cursor-pointer w-full items-center justify-between gap-2 rounded-lg outline-hidden focus-visible:ring-2 focus-visible:ring-primary md:w-[100%+1rem] md:px-2 md:py-1.5 md:hover:bg-primary/5"
-					aria-label="User menu"
+					className="flex min-h-10 w-full cursor-pointer items-center justify-between gap-2 rounded-lg px-1.5 text-foreground outline-hidden hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+					aria-label={t("app.userMenu.title")}
 				>
-					<span className="flex items-center gap-2">
+					<span className="flex min-w-0 items-center gap-2">
 						<UserAvatar name={name ?? ""} />
 						{showUserName && (
-							<span className="text-left leading-tight">
-								<span className="font-medium text-sm">
+							<span className="hidden min-w-0 text-left leading-tight md:block">
+								<span className="block truncate font-medium text-sm">
 									{name}
 								</span>
-								<span className="block text-xs opacity-70">
+								<span className="block truncate text-xs text-muted-foreground">
 									{email}
 								</span>
 							</span>
 						)}
 					</span>
 
-					{showUserName && <MoreVerticalIcon className="size-4" />}
+					{showUserName && (
+						<MoreVerticalIcon
+							className="hidden size-4 shrink-0 md:block"
+							aria-hidden="true"
+						/>
+					)}
 				</button>
 			</DropdownMenuTrigger>
 
@@ -151,10 +156,10 @@ export function UserMenu({ showUserName }: { showUserName?: boolean }) {
 				</DropdownMenuItem>
 
 				<DropdownMenuItem asChild>
-					<a href="https://supastarter.dev/docs/nextjs">
-						<BookIcon className="mr-2 size-4" />
-						{t("app.userMenu.documentation")}
-					</a>
+					<Link href="/demo">
+						<ChartColumnIcon className="mr-2 size-4" />
+						{t("app.userMenu.sampleReport")}
+					</Link>
 				</DropdownMenuItem>
 
 				<DropdownMenuItem asChild>

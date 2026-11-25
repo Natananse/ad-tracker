@@ -72,6 +72,11 @@
 	},
 	"app": {
 		"menu": {
+			"workspaceNavigation": "Workspace navigation",
+			"expandSidebar": "Expand sidebar",
+			"collapseSidebar": "Collapse sidebar",
+			"personalWorkspace": "Personal workspace",
+			"switchWorkspace": "Switch workspace ({name})",
 			"accountSettings": "Account settings",
 			"admin": "Admin",
 			"aiChatbot": "AI Chatbot",
@@ -80,6 +85,8 @@
 			"start": "Start"
 		},
 		"userMenu": {
+			"sampleReport": "Sample report",
+			"title": "User menu",
 			"accountSettings": "Account settings",
 			"colorMode": "Color mode",
 			"documentation": "Documentation",

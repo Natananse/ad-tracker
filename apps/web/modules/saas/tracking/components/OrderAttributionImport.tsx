@@ -98,7 +98,7 @@ export function OrderAttributionImport({
 	return (
 		<details className="border-t pt-3 text-sm">
 			<summary className="w-fit cursor-pointer font-medium">
-				Order attribution
+				Import orders and ad clicks (JSON)
 			</summary>
 			<fieldset disabled={busy} className="mt-4 space-y-4">
 				<p className="text-muted-foreground">

@@ -26,9 +26,9 @@ The app uses email/password locally. Google, GitHub, paid checkout and AI need t
 
 ## Campaign report
 
-Open `/demo` for the public sample. After signing in, choose **Campaign report** in the personal or organization sidebar. Preview a CSV, then save it to the workspace to reopen it later. Organization members can read shared reports; owners and admins can replace them. Concurrent saves use a revision check.
+Open `/demo` for the public sample. Signing in opens the workspace’s **Campaign report**. In an empty workspace, choose **Explore sample report** or **Import CSV** to preview your own data. Save the report to see it the next time you sign in. Organization members can read shared reports. Owners and admins can replace them. Concurrent saves use a revision check.
 
-For first-click or last-click reporting, open **Order attribution** and import a normalized JSON snapshot of orders, refunds, eligible clicks and daily spend. Choose a 7- or 28-day lookback, inspect order evidence, then save. The API computes the result and stores the normalized source with the report so it can be recalculated. [Order snapshot format and example](packages/api/modules/tracking/attribution/README.md)
+For first-click or last-click reporting, open **Import orders and ad clicks (JSON)** and import a normalized JSON snapshot of orders, refunds, eligible clicks and daily spend. Choose a 7- or 28-day lookback, inspect order evidence, then save. The API computes the result and stores the normalized source with the report so it can be recalculated. [Order snapshot format and example](packages/api/modules/tracking/attribution/README.md)
 
 The source of data in this version is file import. Apply the updated schema to a development PostgreSQL database using `pnpm --filter @repo/database generate` and `pnpm --filter @repo/database push` before running the report. Fresh installations use the existing setup command.
 
