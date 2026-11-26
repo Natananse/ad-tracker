@@ -14,7 +14,7 @@
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.6.7",
+		"@biomejs/biome": "^2.6.8",
 		"@repo/tsconfig": "workspace:*",
 		"@types/node": "^26.6.6",
 		"tsx": "^4.23.15"
