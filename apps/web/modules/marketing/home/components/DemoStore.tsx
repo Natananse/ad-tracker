@@ -4,7 +4,6 @@ import { computeAttribution } from "@repo/api/modules/tracking/attribution/compu
 import example from "@repo/api/modules/tracking/attribution/example.json";
 import type { AttributionInput } from "@repo/api/modules/tracking/attribution/model";
 import { ReportResults } from "@saas/tracking/components/CampaignReportResults";
-import { AttributionEvidence } from "@saas/tracking/components/OrderAttributionImport";
 import { StoreIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -68,8 +67,10 @@ export function DemoStore() {
 					</label>
 				</div>
 			</header>
-			<ReportResults rows={result.rows} />
-			<AttributionEvidence source={source} result={result} />
+			<ReportResults
+				rows={result.rows}
+				attribution={{ source, result }}
+			/>
 		</div>
 	);
 }

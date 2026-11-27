@@ -15,6 +15,8 @@ import {
 import { useLocale } from "next-intl";
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import {
+	CampaignCsvError,
+	type CampaignCsvIssue,
 	type CampaignDay,
 	parseCampaignCsv,
 	SAMPLE_CSV,
@@ -24,7 +26,6 @@ import { downloadReportFile } from "../lib/download-report-file";
 import { ReportResults } from "./CampaignReportResults";
 import { FirstCampaignReport } from "./FirstCampaignReport";
 import {
-	AttributionEvidence,
 	type AttributionSource,
 	OrderAttributionImport,
 	type OrderEvidence,
@@ -37,6 +38,91 @@ interface ReportPreview {
 	attributionSource: AttributionSource | null;
 	attribution: OrderEvidence | null;
 	expectedRevision: string | null;
+}
+
+const issuesPerPage = 25;
+
+function CsvProblems({
+	name,
+	issues,
+	onChoose,
+	busy,
+}: {
+	name: string;
+	issues: CampaignCsvIssue[];
+	onChoose: () => void;
+	busy: boolean;
+}) {
+	const [page, setPage] = useState(0);
+	const heading = useRef<HTMLHeadingElement>(null);
+	useEffect(() => {
+		heading.current?.focus();
+	}, []);
+	const start = page * issuesPerPage;
+	const end = Math.min(start + issuesPerPage, issues.length);
+	return (
+		<section
+			aria-label="CSV import errors"
+			className="space-y-3 rounded-lg border border-destructive/35 bg-card p-4 text-sm"
+		>
+			<h2
+				ref={heading}
+				tabIndex={-1}
+				className="break-words font-semibold"
+			>
+				{issues.length.toLocaleString()}{" "}
+				{issues.length === 1 ? "problem" : "problems"} in {name}
+			</h2>
+			<p>Correct the listed cells, then choose the file again.</p>
+			<ul className="space-y-1.5">
+				{issues.slice(start, end).map((issue, index) => (
+					<li
+						key={`${issue.row}/${issue.column}/${start + index}`}
+						className="break-words"
+					>
+						<strong>
+							Row {issue.row} · {issue.column}
+						</strong>{" "}
+						{issue.message}
+					</li>
+				))}
+			</ul>
+			{issues.length > issuesPerPage && (
+				<div className="flex flex-wrap items-center gap-2">
+					<span role="status">
+						Problems {start + 1}–{end} of {issues.length}
+					</span>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						disabled={!page}
+						onClick={() => setPage(page - 1)}
+					>
+						Previous problems
+					</Button>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						disabled={end === issues.length}
+						onClick={() => setPage(page + 1)}
+					>
+						Next problems
+					</Button>
+				</div>
+			)}
+			<Button
+				type="button"
+				variant="outline"
+				size="sm"
+				disabled={busy}
+				onClick={onChoose}
+			>
+				Choose corrected CSV
+			</Button>
+		</section>
+	);
 }
 
 export function CampaignReport({
@@ -56,6 +142,11 @@ export function CampaignReport({
 	const [alert, setAlert] = useState("");
 	const [notice, setNotice] = useState("");
 	const [reading, setReading] = useState(false);
+	const [checkingCsv, setCheckingCsv] = useState("");
+	const [csvProblems, setCsvProblems] = useState<{
+		name: string;
+		issues: CampaignCsvIssue[];
+	} | null>(null);
 	const report = useQuery(
 		orpc.tracking.getReport.queryOptions({
 			input: { organizationId },
@@ -66,7 +157,7 @@ export function CampaignReport({
 	const saved = report.isSuccess ? report.data : undefined;
 	const source = preview ?? saved;
 	const rows = source?.rows ?? [];
-	const busy = reading || save.isPending;
+	const busy = reading || save.isPending || Boolean(checkingCsv);
 	const displayKey = preview ? `preview-${version}` : saved?.revision;
 	const firstReport = saved && !saved.revision && !preview;
 	const WorkspaceIcon = organizationId ? Building2Icon : FolderIcon;
@@ -88,6 +179,7 @@ export function CampaignReport({
 	}
 
 	function showPreview(data: Omit<ReportPreview, "expectedRevision">) {
+		setCsvProblems(null);
 		setPreview({ ...data, expectedRevision: saved?.revision ?? null });
 		setVersion((previous) => previous + 1);
 		setNotice("");
@@ -100,27 +192,16 @@ export function CampaignReport({
 		if (!file) {
 			return;
 		}
+		setPreview(null);
+		setCsvProblems(null);
 		setAlert("");
 		setNotice("");
-		setReading(true);
+		setCheckingCsv(file.name);
 		try {
 			if (file.size > 2 * 1024 * 1024) {
 				throw new Error("Choose a CSV file of 2 MiB or less.");
 			}
 			const data = parseCampaignCsv(await file.text());
-			if (data.length > 10000) {
-				throw new Error("A report supports up to 10,000 daily totals.");
-			}
-			if (
-				data.some(
-					(row) =>
-						row.channel.length > 200 || row.campaign.length > 200,
-				)
-			) {
-				throw new Error(
-					"Use 200 characters or fewer for campaign and channel names.",
-				);
-			}
 			showPreview({
 				name: file.name,
 				sample: false,
@@ -129,13 +210,17 @@ export function CampaignReport({
 				attribution: null,
 			});
 		} catch (cause) {
-			setAlert(
-				cause instanceof Error
-					? cause.message
-					: "The CSV could not be read.",
-			);
+			if (cause instanceof CampaignCsvError) {
+				setCsvProblems({ name: file.name, issues: cause.issues });
+			} else {
+				setAlert(
+					cause instanceof Error
+						? cause.message
+						: "The CSV could not be read. Choose the file again.",
+				);
+			}
 		} finally {
-			setReading(false);
+			setCheckingCsv("");
 		}
 	}
 
@@ -215,6 +300,21 @@ export function CampaignReport({
 				disabled={busy}
 				onChange={importFile}
 			/>
+			{checkingCsv && (
+				<p
+					role="status"
+					className="break-words text-sm text-muted-foreground"
+				>
+					Checking {checkingCsv}…
+				</p>
+			)}
+			{csvProblems && (
+				<CsvProblems
+					{...csvProblems}
+					busy={busy}
+					onChoose={() => input.current?.click()}
+				/>
+			)}
 			{report.isPending && !preview && (
 				<p role="status" className="text-sm text-muted-foreground">
 					Loading your report…
@@ -313,12 +413,18 @@ export function CampaignReport({
 				{notice}
 			</p>
 
-			{rows.length > 0 && <ReportResults key={displayKey} rows={rows} />}
-			{source?.attribution && source.attributionSource && (
-				<AttributionEvidence
-					key={`evidence-${displayKey}`}
-					result={source.attribution}
-					source={source.attributionSource}
+			{rows.length > 0 && (
+				<ReportResults
+					key={displayKey}
+					rows={rows}
+					attribution={
+						source?.attribution && source.attributionSource
+							? {
+									result: source.attribution,
+									source: source.attributionSource,
+								}
+							: undefined
+					}
 				/>
 			)}
 			<Card className="space-y-4 p-5 sm:px-6">
@@ -349,7 +455,7 @@ export function CampaignReport({
 							Use one row per date, channel, campaign, and
 							currency. Use YYYY-MM-DD dates, three-letter
 							currency codes, and decimal amounts without currency
-							symbols. Reports compare one currency at a time.
+							symbols. Use one currency per CSV.
 						</p>
 						<p>
 							Enter merchandise sales after discounts, excluding
@@ -379,7 +485,7 @@ export function CampaignReport({
 									className="size-3.5"
 									aria-hidden="true"
 								/>
-								Download template
+								Download CSV template
 							</Button>
 							<Button
 								type="button"

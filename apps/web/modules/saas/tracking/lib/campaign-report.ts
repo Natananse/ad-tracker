@@ -9,9 +9,12 @@ const columns = [
 	"costs",
 ] as const;
 
-export const TEMPLATE_CSV = `${columns.join(",")}\r\n`;
+const csvHeader = `${columns.join(",")}\r\n`;
+export const TEMPLATE_CSV =
+	csvHeader +
+	"2026-11-02,Meta,Autumn launch,USD,600.00,0.00,125.00,350.00\r\n";
 export const SAMPLE_CSV =
-	TEMPLATE_CSV +
+	csvHeader +
 	[
 		"2026-11-02,Meta,Campaign A,USD,600,0,125,350",
 		"2026-11-02,Google,Campaign B,USD,300,0,90,140",
@@ -33,6 +36,7 @@ export interface CampaignDay {
 export interface CampaignFilter {
 	currency: string;
 	channel?: string;
+	campaign?: string;
 	start: string;
 	end: string;
 }
@@ -44,6 +48,14 @@ export interface CampaignSummary extends Omit<CampaignDay, "date"> {
 	netRevenue: number;
 	contribution: number | null;
 	roas: number | null;
+	breakEvenRoas: number | null;
+}
+
+export interface CampaignTrendDay {
+	date: string;
+	netRevenue: number;
+	spend: number | null;
+	contribution: number | null;
 }
 
 const supportedCurrencies = new Set(Intl.supportedValuesOf("currency"));
@@ -84,108 +96,247 @@ export function formatMoney(minor: number, currency: string, locale: string) {
 	return formatter.format(decimalAmount(minor, places));
 }
 
-function* csvRecords(text: string) {
-	const source = `${text.replace(/^\uFEFF/, "")}\n`;
-	// A field must consume its closing delimiter. A stray quote cannot be skipped.
-	const field = /(?:"((?:[^"]|"")*)"|([^",\r\n]*))(,|\r\n|\n|\r)/y;
-	let cells: string[] = [];
-	let record = 1;
-	while (field.lastIndex < source.length) {
-		const match = field.exec(source);
-		if (!match) {
-			throw new Error(`Row ${record} has invalid CSV quoting.`);
-		}
-		cells.push((match[1]?.replaceAll('""', '"') ?? match[2]).trim());
-		if (cells.length > columns.length) {
-			throw new Error(
-				`Row ${record} has more than ${columns.length} columns.`,
-			);
-		}
-		if (match[3] !== ",") {
-			if (cells.length > 1 || cells[0] !== "") {
-				yield { record, cells };
-			}
-			record++;
-			cells = [];
-		}
+export interface CampaignCsvIssue {
+	row: number;
+	column: string;
+	message: string;
+}
+
+export class CampaignCsvError extends Error {
+	issues: CampaignCsvIssue[];
+
+	constructor(issues: CampaignCsvIssue[]) {
+		const first = issues[0];
+		super(`Row ${first.row}, ${first.column}: ${first.message}`);
+		this.name = "CampaignCsvError";
+		this.issues = issues;
 	}
 }
 
-function readAmount(value: string, places: number, label: string): number {
-	const [whole, fraction = ""] = value.split(".");
-	if (!/^\d+(\.\d+)?$/.test(value) || fraction.length > places) {
-		throw new Error(
-			`${label} requires a nonnegative amount with up to ${places} decimal places.`,
-		);
+function* csvRecords(text: string) {
+	const source = `${text.replace(/^\uFEFF/, "")}\n`;
+	// The last alternative recovers malformed fields up to the next delimiter.
+	const field =
+		/(?:"((?:[^"]|"")*)"|([^",\r\n]*)|([^,\r\n]*))(,|\r\n|\n|\r)/gy;
+	let cells: string[] = [];
+	let malformed = new Set<number>();
+	let line = 1;
+	let row = 1;
+	for (const [, quoted, plain, broken, delimiter] of source.matchAll(field)) {
+		if (broken !== undefined) {
+			malformed.add(cells.length);
+		}
+		cells.push((quoted?.replaceAll('""', '"') ?? plain ?? broken).trim());
+		if (quoted) {
+			line += quoted.match(/\r\n|[\r\n]/g)?.length ?? 0;
+		}
+		if (delimiter !== ",") {
+			if (cells.length > 1 || cells[0] !== "") {
+				yield { row, cells, malformed };
+			}
+			cells = [];
+			malformed = new Set();
+			row = ++line;
+		}
 	}
-	const amount = Number(whole + fraction.padEnd(places, "0"));
-	if (!Number.isSafeInteger(amount)) {
-		throw new Error(`${label} is too large to total accurately.`);
-	}
-	return amount;
 }
 
 export function parseCampaignCsv(text: string): CampaignDay[] {
 	const records = csvRecords(text);
 	const header = records.next();
-	if (
-		header.done ||
-		header.value.cells.length !== columns.length ||
-		!columns.every((name) => header.value.cells.includes(name))
-	) {
-		throw new Error(`The CSV header must contain ${columns.join(", ")}.`);
+	if (header.done) {
+		throw new CampaignCsvError(
+			columns.map((column) => ({
+				row: 1,
+				column,
+				message: "Add this column to the CSV header.",
+			})),
+		);
 	}
+	const issues: CampaignCsvIssue[] = [];
 	const headers = header.value.cells;
+	const indices = new Map<string, number>();
+	for (const [index, name] of headers.entries()) {
+		const column = name || `Column ${index + 1}`;
+		let message: string | undefined;
+		if (header.value.malformed.has(index)) {
+			message = "Fix the quoting in this header.";
+		} else if (!columns.some((expected) => expected === name)) {
+			message =
+				"Remove this unrecognized column or use its exact template name.";
+		} else if (indices.has(name)) {
+			message = "This column appears more than once in the header.";
+		} else {
+			indices.set(name, index);
+		}
+		if (message) {
+			issues.push({ row: header.value.row, column, message });
+		}
+	}
+	for (const column of columns) {
+		if (!indices.has(column)) {
+			issues.push({
+				row: header.value.row,
+				column,
+				message: "Add this column to the CSV header.",
+			});
+		}
+	}
+
 	const rows: CampaignDay[] = [];
-	const seen = new Set<string>();
+	const seen = new Map<string, number>();
 	const magnitudeByCurrency = new Map<string, number>();
-	for (const { record, cells } of records) {
-		if (cells.length !== headers.length) {
-			throw new Error(
-				`Row ${record} must contain ${headers.length} columns. Leave unknown spend or costs blank.`,
+	let fileCurrency: string | undefined;
+	let recordCount = 0;
+	for (const { row, cells, malformed } of records) {
+		recordCount++;
+		const initialIssues = issues.length;
+		const problem = (column: string, message: string) => {
+			issues.push({ row, column, message });
+		};
+		if (recordCount === 10_001) {
+			problem(
+				"File",
+				"A report supports up to 10,000 daily totals. Split the file.",
 			);
 		}
-		const value = (name: (typeof columns)[number]) =>
-			cells[headers.indexOf(name)];
+		for (const index of malformed) {
+			problem(
+				headers[index] || `Column ${index + 1}`,
+				"Fix the invalid CSV quoting.",
+			);
+		}
+		if (cells.length < headers.length) {
+			for (const [column, index] of indices) {
+				if (index >= cells.length) {
+					problem(
+						column,
+						"This field is missing. Keep an empty cell for unknown spend or costs.",
+					);
+				}
+			}
+		} else if (cells.length > headers.length) {
+			problem(
+				`Column ${headers.length + 1}`,
+				`Expected ${headers.length} columns, found ${cells.length}. Quote any commas inside a name.`,
+			);
+		}
+		const value = (name: (typeof columns)[number]) => {
+			const index = indices.get(name);
+			return index === undefined || malformed.has(index)
+				? undefined
+				: cells[index];
+		};
+
 		const date = value("date");
 		const timestamp = Date.parse(`${date}T00:00:00Z`);
-		if (
-			!/^\d{4}-\d{2}-\d{2}$/.test(date) ||
-			!Number.isFinite(timestamp) ||
-			new Date(timestamp).toISOString().slice(0, 10) !== date
-		) {
-			throw new Error(
-				`Row ${record} needs a valid date in YYYY-MM-DD format.`,
-			);
+		const validDate =
+			date !== undefined &&
+			/^\d{4}-\d{2}-\d{2}$/.test(date) &&
+			Number.isFinite(timestamp) &&
+			new Date(timestamp).toISOString().slice(0, 10) === date;
+		if (date !== undefined && !validDate) {
+			problem("date", "Use a valid calendar date in YYYY-MM-DD format.");
 		}
-		const currency = value("currency").toUpperCase();
-		if (!supportedCurrencies.has(currency)) {
-			throw new Error(
-				`Row ${record} needs a supported ISO currency code such as USD.`,
+
+		const currency = value("currency")?.toUpperCase();
+		const supported =
+			currency !== undefined && supportedCurrencies.has(currency);
+		if (currency !== undefined && !supported) {
+			problem(
+				"currency",
+				"Use a supported three-letter ISO currency code such as USD.",
 			);
+		} else if (supported) {
+			fileCurrency ??= currency;
+			if (currency !== fileCurrency) {
+				problem(
+					"currency",
+					`Mixed currencies. This file starts with ${fileCurrency}. Put ${currency} in a separate file.`,
+				);
+			}
 		}
-		const channel = value("channel");
-		const campaign = value("campaign");
-		if (!channel || !campaign) {
-			throw new Error(
-				`Row ${record} needs both a channel and a campaign name.`,
-			);
+
+		const label = (name: "channel" | "campaign") => {
+			const text = value(name);
+			if (text === undefined) {
+				return;
+			}
+			if (!text) {
+				problem(name, "Enter a name.");
+			} else if (text.length > 200 || text.includes("\0")) {
+				problem(
+					name,
+					"Use a name of up to 200 characters without NUL characters.",
+				);
+			} else {
+				return text;
+			}
+		};
+		const channel = label("channel");
+		const campaign = label("campaign");
+		if (validDate && channel && campaign && supported) {
+			const key = JSON.stringify([date, channel, campaign, currency]);
+			const original = seen.get(key);
+			if (original !== undefined) {
+				problem(
+					"date, channel, campaign, currency",
+					`This daily total repeats row ${original}. Combine the totals into one row.`,
+				);
+			} else {
+				seen.set(key, row);
+			}
 		}
-		const key = JSON.stringify([date, channel, campaign, currency]);
-		if (seen.has(key)) {
-			throw new Error(
-				`Row ${record} repeats a daily total for the same channel, campaign and currency.`,
-			);
-		}
-		seen.add(key);
-		const { places } = currencyFormat(currency, "en");
-		const amount = (name: "sales" | "refunds" | "spend" | "costs") =>
-			readAmount(value(name), places, `Row ${record}, ${name}`);
+
+		const places = supported
+			? currencyFormat(currency, "en").places
+			: undefined;
+		const amount = (name: "sales" | "refunds" | "spend" | "costs") => {
+			const input = value(name);
+			if (input === undefined) {
+				return;
+			}
+			if (input === "" && (name === "spend" || name === "costs")) {
+				return null;
+			}
+			if (!/^\d+(\.\d+)?$/.test(input)) {
+				problem(
+					name,
+					"Enter a nonnegative number without a currency symbol or thousands separators.",
+				);
+				return;
+			}
+			if (places === undefined) {
+				return;
+			}
+			const [whole, fraction = ""] = input.split(".");
+			if (fraction.length > places) {
+				problem(
+					name,
+					`Use up to ${places} decimal places for ${currency}.`,
+				);
+				return;
+			}
+			const minor = Number(whole + fraction.padEnd(places, "0"));
+			if (!Number.isSafeInteger(minor)) {
+				problem(name, "This amount is too large to total accurately.");
+				return;
+			}
+			return minor;
+		};
 		const sales = amount("sales");
 		const refunds = amount("refunds");
-		const spend = value("spend") === "" ? null : amount("spend");
-		const costs = value("costs") === "" ? null : amount("costs");
-		// Bound all future sums and differences, including any filtered subset.
+		const spend = amount("spend");
+		const costs = amount("costs");
+		if (
+			!supported ||
+			sales == null ||
+			refunds == null ||
+			spend === undefined ||
+			costs === undefined
+		) {
+			continue;
+		}
 		const magnitude =
 			(magnitudeByCurrency.get(currency) ?? 0) +
 			sales +
@@ -193,32 +344,93 @@ export function parseCampaignCsv(text: string): CampaignDay[] {
 			(spend ?? 0) +
 			(costs ?? 0);
 		if (!Number.isSafeInteger(magnitude)) {
-			throw new Error(
-				`Row ${record} exceeds the reporting range for ${currency} totals.`,
+			problem(
+				"sales, refunds, spend, costs",
+				`The total exceeds the reporting range for ${currency}.`,
 			);
+		} else {
+			magnitudeByCurrency.set(currency, magnitude);
 		}
-		magnitudeByCurrency.set(currency, magnitude);
-		rows.push({
-			date,
-			channel,
-			campaign,
-			currency,
-			sales,
-			refunds,
-			spend,
-			costs,
+		if (
+			issues.length === initialIssues &&
+			validDate &&
+			channel &&
+			campaign &&
+			recordCount <= 10_000
+		) {
+			rows.push({
+				date,
+				channel,
+				campaign,
+				currency,
+				sales,
+				refunds,
+				spend,
+				costs,
+			});
+		}
+	}
+	if (!recordCount) {
+		issues.push({
+			row: header.value.row + 1,
+			column: "File",
+			message: "Add at least one daily campaign row below the header.",
 		});
 	}
-	if (!rows.length) {
-		throw new Error(
-			"Add at least one daily campaign row below the CSV header.",
-		);
+	if (issues.length) {
+		throw new CampaignCsvError(issues);
 	}
 	return rows;
 }
 
 function addKnown(total: number | null, value: number | null) {
 	return total === null || value === null ? null : total + value;
+}
+
+export function matchesCampaignFilter(
+	row: Pick<CampaignDay, "date" | "channel" | "campaign" | "currency">,
+	filter: CampaignFilter,
+): boolean {
+	return (
+		row.currency === filter.currency &&
+		(!filter.channel || row.channel === filter.channel) &&
+		(!filter.campaign || row.campaign === filter.campaign) &&
+		(!filter.start || row.date >= filter.start) &&
+		(!filter.end || row.date <= filter.end)
+	);
+}
+
+function contributionAfterAds(
+	netRevenue: number,
+	spend: number | null,
+	costs: number | null,
+) {
+	return spend === null || costs === null ? null : netRevenue - spend - costs;
+}
+
+export function buildCampaignTrend(
+	rows: CampaignDay[],
+	filter: CampaignFilter,
+): CampaignTrendDay[] {
+	const days = new Map<string, CampaignTrendDay>();
+	for (const row of rows) {
+		if (!matchesCampaignFilter(row, filter)) {
+			continue;
+		}
+		let day = days.get(row.date);
+		if (!day) {
+			day = { date: row.date, netRevenue: 0, spend: 0, contribution: 0 };
+			days.set(row.date, day);
+		}
+		const netRevenue = row.sales - row.refunds;
+		day.netRevenue += netRevenue;
+		day.spend = addKnown(day.spend, row.spend);
+		day.contribution = addKnown(
+			day.contribution,
+			contributionAfterAds(netRevenue, row.spend, row.costs),
+		);
+	}
+	return [...days.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export function campaignOverview(summaries: CampaignSummary[]) {
@@ -252,12 +464,7 @@ export function buildCampaignReport(
 ): CampaignSummary[] {
 	const groups = new Map<string, CampaignSummary>();
 	for (const row of rows) {
-		if (
-			row.currency !== filter.currency ||
-			(filter.channel && row.channel !== filter.channel) ||
-			(filter.start && row.date < filter.start) ||
-			(filter.end && row.date > filter.end)
-		) {
+		if (!matchesCampaignFilter(row, filter)) {
 			continue;
 		}
 		const key = JSON.stringify([row.channel, row.campaign]);
@@ -277,6 +484,7 @@ export function buildCampaignReport(
 				netRevenue: 0,
 				contribution: null,
 				roas: null,
+				breakEvenRoas: null,
 			};
 			groups.set(key, summary);
 		}
@@ -292,19 +500,52 @@ export function buildCampaignReport(
 		summary.spend = addKnown(summary.spend, row.spend);
 		summary.costs = addKnown(summary.costs, row.costs);
 		summary.netRevenue = summary.sales - summary.refunds;
-		summary.contribution =
-			summary.spend === null || summary.costs === null
-				? null
-				: summary.netRevenue - summary.spend - summary.costs;
+		summary.contribution = contributionAfterAds(
+			summary.netRevenue,
+			summary.spend,
+			summary.costs,
+		);
 		summary.roas = summary.spend
 			? summary.netRevenue / summary.spend
 			: null;
+		// Compare observed ROAS against the threshold implied by the pre-ad contribution margin.
+		const margin =
+			summary.costs === null ? null : summary.netRevenue - summary.costs;
+		summary.breakEvenRoas =
+			summary.spend !== null &&
+			summary.spend > 0 &&
+			summary.netRevenue > 0 &&
+			margin !== null &&
+			margin > 0
+				? summary.netRevenue / margin
+				: null;
 	}
 	return [...groups.values()].sort(
 		(a, b) =>
 			a.campaign.localeCompare(b.campaign) ||
 			a.channel.localeCompare(b.channel),
 	);
+}
+
+export function campaignExtremes(summaries: CampaignSummary[]) {
+	const eligible = summaries.filter(
+		(campaign): campaign is CampaignSummary & { contribution: number } =>
+			campaign.contribution !== null &&
+			!(
+				campaign.channel === "Unmatched" &&
+				campaign.campaign === "No eligible click"
+			),
+	);
+	let highest = Number.NEGATIVE_INFINITY;
+	let lowest = Number.POSITIVE_INFINITY;
+	for (const campaign of eligible) {
+		highest = Math.max(highest, campaign.contribution);
+		lowest = Math.min(lowest, campaign.contribution);
+	}
+	return {
+		best: eligible.filter((campaign) => campaign.contribution === highest),
+		worst: eligible.filter((campaign) => campaign.contribution === lowest),
+	};
 }
 
 function exportLabel(value: string) {
@@ -319,7 +560,7 @@ export function makeReportCsv(
 ) {
 	const generatedAt = new Date().toISOString();
 	const lines = [
-		"channel,campaign,currency,filter_start,filter_end,first_date,last_date,reported_days,sales,refunds,net_revenue,spend,costs,roas,contribution_after_ads,spend_complete,costs_complete,generated_at_utc",
+		"channel,campaign,currency,filter_start,filter_end,first_date,last_date,reported_days,sales,refunds,net_revenue,spend,costs,roas,contribution_after_ads,spend_complete,costs_complete,generated_at_utc,filter_channel,filter_campaign,break_even_roas",
 	];
 	for (const summary of summaries) {
 		const { places } = currencyFormat(summary.currency, "en");
@@ -345,8 +586,11 @@ export function makeReportCsv(
 				summary.spend !== null,
 				summary.costs !== null,
 				generatedAt,
+				exportLabel(filter.channel ?? ""),
+				exportLabel(filter.campaign ?? ""),
+				summary.breakEvenRoas ?? "",
 			].join(","),
 		);
 	}
-	return lines.join("\r\n") + "\r\n";
+	return `${lines.join("\r\n")}\r\n`;
 }

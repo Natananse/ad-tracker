@@ -19,24 +19,110 @@ import {
 	CreditCardIcon,
 	DownloadIcon,
 	RotateCcwIcon,
+	TrendingDownIcon,
 } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useMemo, useState } from "react";
 import {
 	buildCampaignReport,
+	buildCampaignTrend,
 	type CampaignDay,
+	type CampaignSummary,
+	campaignExtremes,
 	campaignOverview,
 	formatMoney,
 	makeReportCsv,
+	matchesCampaignFilter,
 } from "../lib/campaign-report";
 import { downloadReportFile } from "../lib/download-report-file";
 import { CampaignComparison } from "./CampaignComparison";
+import { CampaignTrend } from "./CampaignTrend";
+import {
+	AttributionEvidence,
+	type AttributionSource,
+	type OrderEvidence,
+} from "./OrderAttributionImport";
 
 const pageSize = 50;
 const selectStyle =
 	"h-9 w-full min-w-0 rounded-md border border-input bg-card px-2.5 text-sm shadow-xs focus-visible:outline-2 focus-visible:outline-ring";
 
-export function ReportResults({ rows }: { rows: CampaignDay[] }) {
+function ContributionHighlight({
+	label,
+	campaigns,
+	locale,
+}: {
+	label: string;
+	campaigns: CampaignSummary[];
+	locale: string;
+}) {
+	const first = campaigns[0];
+	const amount = first?.contribution;
+	const [showTies, setShowTies] = useState(false);
+	return (
+		<div className="min-w-0 rounded-xl border bg-muted/30 p-4">
+			<dt className="text-sm font-medium text-muted-foreground">
+				{label}
+			</dt>
+			<dd className="mt-1">
+				{first && amount != null ? (
+					<>
+						<strong
+							className={`block break-words text-2xl tabular-nums ${amount < 0 ? "text-rose-700 dark:text-rose-300" : ""}`}
+						>
+							{formatMoney(amount, first.currency, locale)}
+						</strong>
+						<span className="text-sm break-words">
+							{first.campaign} · {first.channel}
+						</span>
+						{campaigns.length > 1 && (
+							<details
+								className="mt-1 text-sm"
+								onToggle={(event) =>
+									setShowTies(event.currentTarget.open)
+								}
+							>
+								<summary className="w-fit cursor-pointer text-muted-foreground">
+									Tied with{" "}
+									{(campaigns.length - 1).toLocaleString(
+										locale,
+									)}{" "}
+									more
+								</summary>
+								{showTies && (
+									<ul className="mt-2 max-h-40 space-y-1 overflow-y-auto">
+										{campaigns.slice(1).map((campaign) => (
+											<li
+												key={JSON.stringify([
+													campaign.channel,
+													campaign.campaign,
+												])}
+												className="break-words"
+											>
+												{campaign.campaign} ·{" "}
+												{campaign.channel}
+											</li>
+										))}
+									</ul>
+								)}
+							</details>
+						)}
+					</>
+				) : (
+					<span className="font-semibold">Unknown</span>
+				)}
+			</dd>
+		</div>
+	);
+}
+
+export function ReportResults({
+	rows,
+	attribution,
+}: {
+	rows: CampaignDay[];
+	attribution?: { source: AttributionSource; result: OrderEvidence };
+}) {
 	const locale = useLocale();
 	const ranges = useMemo(() => {
 		const byCurrency = new Map<string, { first: string; last: string }>();
@@ -61,6 +147,7 @@ export function ReportResults({ rows }: { rows: CampaignDay[] }) {
 		start: "",
 		end: "",
 		channel: "",
+		campaign: "",
 	});
 	const [page, setPage] = useState(0);
 	const channels = useMemo(
@@ -77,6 +164,22 @@ export function ReportResults({ rows }: { rows: CampaignDay[] }) {
 	const invalidDates = Boolean(
 		filter.start && filter.end && filter.start > filter.end,
 	);
+	const campaigns = useMemo(
+		() =>
+			Array.from(
+				new Set(
+					rows
+						.filter(
+							(row) =>
+								row.currency === filter.currency &&
+								(!filter.channel ||
+									row.channel === filter.channel),
+						)
+						.map((row) => row.campaign),
+				),
+			).sort(),
+		[rows, filter.currency, filter.channel],
+	);
 	const summaries = useMemo(
 		() => (invalidDates ? [] : buildCampaignReport(rows, filter)),
 		[rows, filter, invalidDates],
@@ -85,8 +188,30 @@ export function ReportResults({ rows }: { rows: CampaignDay[] }) {
 		maximumFractionDigits: 2,
 	});
 	const overview = campaignOverview(summaries);
+	const { best, worst } = campaignExtremes(summaries);
+	const days = useMemo(
+		() => buildCampaignTrend(rows, filter),
+		[rows, filter],
+	);
+	const evidence = useMemo(() => {
+		if (!attribution) {
+			return undefined;
+		}
+		const currency = attribution.source.snapshot.currency;
+		const visible = attribution.result.evidence.filter((order) =>
+			matchesCampaignFilter({ ...order, currency }, filter),
+		);
+		return {
+			evidence: visible,
+			matchedOrders: visible.filter((order) => order.clickId !== null)
+				.length,
+			totalOrders: visible.length,
+		};
+	}, [attribution, filter]);
 	const range = ranges.get(filter.currency);
-	const hasFilters = Boolean(filter.channel || filter.start || filter.end);
+	const hasFilters = Boolean(
+		filter.channel || filter.campaign || filter.start || filter.end,
+	);
 	const dateFormat = new Intl.DateTimeFormat(locale, {
 		dateStyle: "medium",
 		timeZone: "UTC",
@@ -102,6 +227,9 @@ export function ReportResults({ rows }: { rows: CampaignDay[] }) {
 		setFilter((previous) => ({
 			...previous,
 			...(field === "currency" ? { channel: "" } : {}),
+			...(field === "currency" || field === "channel"
+				? { campaign: "" }
+				: {}),
 			[field]: value,
 		}));
 		setPage(0);
@@ -129,10 +257,35 @@ export function ReportResults({ rows }: { rows: CampaignDay[] }) {
 						}
 					>
 						<DownloadIcon className="size-4" aria-hidden="true" />
-						Export report
+						Export filtered CSV
 					</Button>
 				</div>
-				<div className="grid min-w-0 grid-cols-1 gap-3 min-[375px]:grid-cols-2 md:grid-cols-4">
+				{summaries.length > 0 && (
+					<div>
+						<dl className="grid gap-3 sm:grid-cols-2">
+							<ContributionHighlight
+								label="Best campaign by contribution"
+								campaigns={best}
+								locale={locale}
+							/>
+							<ContributionHighlight
+								label="Worst campaign by contribution"
+								campaigns={worst}
+								locale={locale}
+							/>
+						</dl>
+						{(!best.length ||
+							summaries.some(
+								(item) => item.contribution === null,
+							)) && (
+							<p className="mt-2 text-sm text-muted-foreground">
+								Only campaigns with known ad spend and variable
+								costs can be ranked.
+							</p>
+						)}
+					</div>
+				)}
+				<div className="grid min-w-0 grid-cols-1 gap-3 min-[375px]:grid-cols-2 lg:grid-cols-5">
 					<div className="min-w-0 space-y-1.5">
 						<Label htmlFor="report-currency">Currency</Label>
 						<select
@@ -161,6 +314,24 @@ export function ReportResults({ rows }: { rows: CampaignDay[] }) {
 							<option value="">All channels</option>
 							{channels.map((channel) => (
 								<option key={channel}>{channel}</option>
+							))}
+						</select>
+					</div>
+					<div className="min-w-0 space-y-1.5">
+						<Label htmlFor="report-campaign">Campaign</Label>
+						<select
+							id="report-campaign"
+							value={filter.campaign}
+							className={selectStyle}
+							onChange={(event) =>
+								changeFilter("campaign", event.target.value)
+							}
+						>
+							<option value="">All campaigns</option>
+							{campaigns.map((name) => (
+								<option key={name} value={name}>
+									{name}
+								</option>
 							))}
 						</select>
 					</div>
@@ -224,7 +395,7 @@ export function ReportResults({ rows }: { rows: CampaignDay[] }) {
 									)}
 								</>
 							) : (
-								"No campaigns match these filters."
+								"No campaigns match. Try another date range or reset the filters."
 							))}
 					</div>
 					{hasFilters && (
@@ -236,6 +407,7 @@ export function ReportResults({ rows }: { rows: CampaignDay[] }) {
 								setFilter({
 									currency: filter.currency,
 									channel: "",
+									campaign: "",
 									start: "",
 									end: "",
 								});
@@ -352,11 +524,16 @@ export function ReportResults({ rows }: { rows: CampaignDay[] }) {
 							</dl>
 						</section>
 					</div>
+					<CampaignTrend
+						days={days}
+						currency={filter.currency}
+						locale={locale}
+					/>
 					<Card className="min-w-0 overflow-hidden">
 						<h3 className="border-b px-4 py-4 text-lg font-semibold tracking-tight sm:px-6">
 							Campaign details
 						</h3>
-						<Table className="min-w-[56rem]">
+						<Table className="min-w-[62rem]">
 							<caption className="sr-only">
 								Campaign performance in {filter.currency}
 							</caption>
@@ -369,6 +546,7 @@ export function ReportResults({ rows }: { rows: CampaignDay[] }) {
 										"Net revenue",
 										"Ad spend",
 										"ROAS",
+										"Break-even ROAS",
 										"Variable costs",
 										"Contribution after ads",
 									].map((label) => (
@@ -429,6 +607,11 @@ export function ReportResults({ rows }: { rows: CampaignDay[] }) {
 													: `${ratioFormat.format(summary.roas)}×`}
 											</TableCell>
 											<TableCell className="text-right">
+												{summary.breakEvenRoas === null
+													? "Unknown"
+													: `${ratioFormat.format(summary.breakEvenRoas)}×`}
+											</TableCell>
+											<TableCell className="text-right">
 												{money(summary.costs)}
 											</TableCell>
 											<TableCell
@@ -438,6 +621,18 @@ export function ReportResults({ rows }: { rows: CampaignDay[] }) {
 													summary.contribution,
 													"Incomplete",
 												)}
+												{summary.contribution !==
+													null &&
+													summary.contribution <
+														0 && (
+														<span className="mt-1 flex items-center justify-end gap-1 text-xs">
+															<TrendingDownIcon
+																className="size-3.5"
+																aria-hidden="true"
+															/>{" "}
+															Loss
+														</span>
+													)}
 											</TableCell>
 										</TableRow>
 									))}
@@ -478,9 +673,23 @@ export function ReportResults({ rows }: { rows: CampaignDay[] }) {
 							and requires known, positive spend. Contribution
 							subtracts ad spend and variable costs from net
 							revenue and requires both inputs on every included
-							day.
+							day. Break-even ROAS divides net revenue by the
+							amount left after variable costs. It is shown for
+							campaigns with positive ad spend and a positive
+							margin before ads.
 						</p>
 					</Card>
+					{attribution && evidence && (
+						<AttributionEvidence
+							key={JSON.stringify([
+								filter,
+								attribution.source.model,
+								attribution.source.windowDays,
+							])}
+							source={attribution.source}
+							result={evidence}
+						/>
+					)}
 				</>
 			)}
 		</section>

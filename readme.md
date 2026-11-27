@@ -32,9 +32,9 @@ For first-click or last-click reporting, open **Import orders and ad clicks (JSO
 
 The source of data in this version is file import. Apply the updated schema to a development PostgreSQL database using `pnpm --filter @repo/database generate` and `pnpm --filter @repo/database push` before running the report. Fresh installations use the existing setup command.
 
-Use one row per date, channel, campaign and currency. Enter the date as `YYYY-MM-DD`, use an ISO currency code, and enter amounts in that currency's major units. Use sales after discounts and merchandise refunds, excluding taxes and shipping income. Costs cover product, fulfillment, payment fees and other variable costs. Leave unknown spend or costs blank and enter `0` for a confirmed zero.
+Choose **Download CSV template** for the headers and one example row. Use one currency per new CSV and one row per date, channel and campaign. Enter the date as `YYYY-MM-DD` and amounts in the currency's major units. Use sales after discounts and merchandise refunds, excluding taxes and shipping income. Costs cover product, fulfillment, payment fees and other variable costs. Leave unknown spend or costs blank and enter `0` for a confirmed zero. If a file has errors, the preview lists the affected rows and columns.
 
-The report compares campaigns in one currency at a time. Net revenue is sales less refunds. ROAS divides total net revenue by total ad spend. Contribution subtracts spend and variable costs from net revenue. The example reproduces the two-campaign comparison in the [MVP requirements](prd/04-mvp-requirements.md).
+Filter by date, channel and campaign to update the rankings, charts, order evidence and CSV export. Older reports with multiple currencies still open one currency at a time. Net revenue is sales less refunds. ROAS divides net revenue by ad spend. Contribution subtracts spend and variable costs from net revenue. For campaigns with positive known spend and a positive margin before ads, break-even ROAS is net revenue divided by net revenue less variable costs. For example, $100 net revenue and $60 in variable costs require a 2.5× return to break even. The sample reproduces the two-campaign comparison in the [MVP requirements](prd/04-mvp-requirements.md).
 
 ### Reporting backend
 

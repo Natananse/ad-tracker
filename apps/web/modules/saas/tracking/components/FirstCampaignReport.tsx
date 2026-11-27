@@ -75,7 +75,7 @@ export function FirstCampaignReport({
 						}
 					>
 						<DownloadIcon className="size-4" aria-hidden="true" />
-						CSV template
+						Download CSV template
 					</Button>
 				</div>
 			</section>
