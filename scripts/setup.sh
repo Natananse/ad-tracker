@@ -34,7 +34,7 @@ node scripts/setup-local-env.mjs
 pnpm install --frozen-lockfile
 docker compose --env-file .env.local --file docker-compose.yml up --detach --wait
 pnpm --filter @repo/database generate
-pnpm --filter @repo/database push
+pnpm --filter @repo/database migrate:deploy
 pnpm --filter @repo/database seed
 
 echo "Local setup complete. Start the app with pnpm dev. Mailpit is at http://localhost:8025."

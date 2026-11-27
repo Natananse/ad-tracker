@@ -1,6 +1,8 @@
 "use client";
 
 import { ORPCError } from "@orpc/client";
+import type { WorkspaceCostDefaults } from "@repo/api/modules/tracking/cost-settings";
+import { applyWorkspaceCosts } from "@repo/api/modules/tracking/workspace-costs";
 import { orpc } from "@shared/lib/orpc-query-utils";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Alert } from "@ui/components/alert";
@@ -13,7 +15,7 @@ import {
 	UploadIcon,
 } from "lucide-react";
 import { useLocale } from "next-intl";
-import { type ChangeEvent, useEffect, useRef, useState } from "react";
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
 	CampaignCsvError,
 	type CampaignCsvIssue,
@@ -30,6 +32,7 @@ import {
 	OrderAttributionImport,
 	type OrderEvidence,
 } from "./OrderAttributionImport";
+import { WorkspaceCostSettingsForm } from "./WorkspaceCostSettingsForm";
 
 interface ReportPreview {
 	name: string;
@@ -154,9 +157,28 @@ export function CampaignReport({
 		}),
 	);
 	const save = useMutation(orpc.tracking.saveReport.mutationOptions());
+	const saveSettings = useMutation(
+		orpc.tracking.saveCostSettings.mutationOptions(),
+	);
 	const saved = report.isSuccess ? report.data : undefined;
 	const source = preview ?? saved;
-	const rows = source?.rows ?? [];
+	const rows = useMemo(() => {
+		if (!preview) {
+			return saved?.rows ?? [];
+		}
+		const attribution =
+			preview.attributionSource && preview.attribution
+				? {
+						source: preview.attributionSource,
+						result: preview.attribution,
+					}
+				: undefined;
+		return applyWorkspaceCosts(
+			preview.rows,
+			saved?.costSettings ?? null,
+			attribution,
+		);
+	}, [preview, saved]);
 	const busy = reading || save.isPending || Boolean(checkingCsv);
 	const displayKey = preview ? `preview-${version}` : saved?.revision;
 	const firstReport = saved && !saved.revision && !preview;
@@ -258,6 +280,16 @@ export function CampaignReport({
 		}
 	}
 
+	async function saveCostSettings(settings: WorkspaceCostDefaults | null) {
+		await saveSettings.mutateAsync({ organizationId, settings });
+		const updated = await report.refetch();
+		if (updated.isError) {
+			setNotice(
+				"Cost settings saved. Retry loading the report to see the updated estimates.",
+			);
+		}
+	}
+
 	return (
 		<div className="min-w-0 space-y-5">
 			<header className="flex flex-wrap items-end justify-between gap-4 border-b pb-5">
@@ -291,6 +323,14 @@ export function CampaignReport({
 					</Button>
 				)}
 			</header>
+			{saved && (
+				<WorkspaceCostSettingsForm
+					settings={saved.costSettings}
+					canEdit={saved.canEdit}
+					suggestedCurrency={source?.rows[0]?.currency}
+					onSave={saveCostSettings}
+				/>
+			)}
 			<input
 				ref={input}
 				type="file"
@@ -417,6 +457,7 @@ export function CampaignReport({
 				<ReportResults
 					key={displayKey}
 					rows={rows}
+					costSettings={saved?.costSettings}
 					attribution={
 						source?.attribution && source.attributionSource
 							? {
@@ -463,6 +504,13 @@ export function CampaignReport({
 							amounts. For spend and variable costs, use zero for
 							a confirmed zero and leave the amount blank when
 							unknown.
+						</p>
+						<p>
+							Add an optional <code>orders</code> column with the
+							number of paid orders for that row. Workspace
+							settings use it to estimate per-order fees when
+							costs are blank. Enter 0 for a confirmed count of
+							zero.
 						</p>
 						<p>
 							Variable costs include the cost of goods sold,

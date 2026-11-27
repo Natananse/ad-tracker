@@ -82,9 +82,15 @@ export const CampaignReportScalarFieldEnumSchema = z.enum(['id', 'userId', 'orga
 
 export type CampaignReportScalarFieldEnum = z.infer<typeof CampaignReportScalarFieldEnumSchema>;
 
+// File: WorkspaceCostSettingsScalarFieldEnum.schema.ts
+
+export const WorkspaceCostSettingsScalarFieldEnumSchema = z.enum(['id', 'userId', 'organizationId', 'currency', 'productCostBps', 'paymentFeeBps', 'fixedPaymentFeeMinor', 'fulfillmentCostMinor'])
+
+export type WorkspaceCostSettingsScalarFieldEnum = z.infer<typeof WorkspaceCostSettingsScalarFieldEnumSchema>;
+
 // File: CampaignDailyFactScalarFieldEnum.schema.ts
 
-export const CampaignDailyFactScalarFieldEnumSchema = z.enum(['reportId', 'date', 'channel', 'campaign', 'currency', 'sales', 'refunds', 'spend', 'costs'])
+export const CampaignDailyFactScalarFieldEnumSchema = z.enum(['reportId', 'date', 'channel', 'campaign', 'currency', 'sales', 'refunds', 'spend', 'costs', 'orders'])
 
 export type CampaignDailyFactScalarFieldEnum = z.infer<typeof CampaignDailyFactScalarFieldEnumSchema>;
 
@@ -339,6 +345,22 @@ export const CampaignReportSchema = z.object({
 export type CampaignReportType = z.infer<typeof CampaignReportSchema>;
 
 
+// File: WorkspaceCostSettings.schema.ts
+
+export const WorkspaceCostSettingsSchema = z.object({
+  id: z.string(),
+  userId: z.string().nullish(),
+  organizationId: z.string().nullish(),
+  currency: z.string(),
+  productCostBps: z.number().int(),
+  paymentFeeBps: z.number().int(),
+  fixedPaymentFeeMinor: z.bigint(),
+  fulfillmentCostMinor: z.bigint(),
+});
+
+export type WorkspaceCostSettingsType = z.infer<typeof WorkspaceCostSettingsSchema>;
+
+
 // File: CampaignDailyFact.schema.ts
 
 export const CampaignDailyFactSchema = z.object({
@@ -351,6 +373,7 @@ export const CampaignDailyFactSchema = z.object({
   refunds: z.bigint(),
   spend: z.bigint().nullish(),
   costs: z.bigint().nullish(),
+  orders: z.number().int().nullish(),
 });
 
 export type CampaignDailyFactType = z.infer<typeof CampaignDailyFactSchema>;

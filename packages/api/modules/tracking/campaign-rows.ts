@@ -6,16 +6,26 @@ import {
 	campaignLabel,
 } from "./attribution/campaign-constraints.mjs";
 
-const campaignDay = z.strictObject({
-	date: z.iso.date(),
-	channel: campaignLabel,
-	campaign: campaignLabel,
-	currency: campaignCurrency,
-	sales: campaignAmount,
-	refunds: campaignAmount,
-	spend: campaignAmount.nullable(),
-	costs: campaignAmount.nullable(),
-});
+const campaignDay = z
+	.strictObject({
+		date: z.iso.date(),
+		channel: campaignLabel,
+		campaign: campaignLabel,
+		currency: campaignCurrency,
+		sales: campaignAmount,
+		refunds: campaignAmount,
+		spend: campaignAmount.nullable(),
+		costs: campaignAmount.nullable(),
+		orders: z.int().min(0).max(2_147_483_647).nullish(),
+		costSource: z
+			.enum(["entered", "estimated", "mixed", "unknown"])
+			.optional(),
+		estimatedCosts: campaignAmount.nullish(),
+	})
+	// A caller may send back rows from getReport. Only imported facts are stored.
+	.transform(
+		({ costSource: _source, estimatedCosts: _estimate, ...row }) => row,
+	);
 
 export const campaignRows = z
 	.array(campaignDay)

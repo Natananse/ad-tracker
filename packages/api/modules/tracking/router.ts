@@ -1,10 +1,10 @@
 import { ORPCError } from "@orpc/server";
 import {
-	type CampaignReportScope,
 	db,
-	type Prisma,
 	readCampaignReport,
+	readWorkspaceCostSettings,
 	replaceCampaignReport,
+	writeWorkspaceCostSettings,
 } from "@repo/database";
 import { z } from "zod";
 import { protectedProcedure } from "../../orpc/procedures";
@@ -15,6 +15,9 @@ import {
 } from "./attribution/compute";
 import { type AttributionInput, attributionInput } from "./attribution/model";
 import { campaignRows } from "./campaign-rows";
+import { workspaceCostDefaults } from "./cost-settings";
+import { workspaceAccess } from "./workspace-access";
+import { applyWorkspaceCosts } from "./workspace-costs";
 
 const reportScope = z.strictObject({
 	organizationId: z.string().min(1).max(200).optional(),
@@ -22,36 +25,6 @@ const reportScope = z.strictObject({
 const revisionInput = reportScope.extend({
 	expectedRevision: z.uuid().nullable(),
 });
-
-async function reportAccess(
-	tx: Prisma.TransactionClient,
-	userId: string,
-	organizationId: string | undefined,
-	forWrite: boolean,
-): Promise<{ scope: CampaignReportScope; canEdit: boolean }> {
-	if (!organizationId) {
-		return { scope: { userId }, canEdit: true };
-	}
-	// Hold the membership during an import so access cannot be revoked mid-write.
-	const membership = forWrite
-		? (
-				await tx.$queryRaw<
-					{ role: string }[]
-				>`SELECT role FROM "member" WHERE "organizationId" = ${organizationId} AND "userId" = ${userId} FOR SHARE`
-			)[0]
-		: await tx.member.findUnique({
-				where: { organizationId_userId: { organizationId, userId } },
-				select: { role: true },
-			});
-	if (!membership) {
-		throw new ORPCError("FORBIDDEN");
-	}
-	const canEdit = membership.role === "owner" || membership.role === "admin";
-	if (forWrite && !canEdit) {
-		throw new ORPCError("FORBIDDEN");
-	}
-	return { scope: { organizationId }, canEdit };
-}
 
 const getReport = protectedProcedure
 	.route({
@@ -64,13 +37,15 @@ const getReport = protectedProcedure
 	.handler(async ({ input, context }) => {
 		const saved = await db.$transaction(
 			async (tx) => {
-				const { scope, canEdit } = await reportAccess(
+				const { scope, canEdit } = await workspaceAccess(
 					tx,
 					context.user.id,
 					input.organizationId,
 					false,
 				);
-				return { ...(await readCampaignReport(tx, scope)), canEdit };
+				const report = await readCampaignReport(tx, scope);
+				const costSettings = await readWorkspaceCostSettings(tx, scope);
+				return { ...report, costSettings, canEdit };
 			},
 			{ isolationLevel: "RepeatableRead", timeout: 30_000 },
 		);
@@ -78,10 +53,18 @@ const getReport = protectedProcedure
 			saved.attributionSource === null
 				? null
 				: attributionInput.parse(saved.attributionSource);
+		const attribution = source === null ? null : computeAttribution(source);
 		return {
 			...saved,
+			rows: applyWorkspaceCosts(
+				saved.rows,
+				saved.costSettings,
+				source && attribution
+					? { source, result: attribution }
+					: undefined,
+			),
 			attributionSource: source,
-			attribution: source === null ? null : computeAttribution(source),
+			attribution,
 		};
 	});
 
@@ -135,7 +118,7 @@ const saveReport = protectedProcedure
 		}
 		const revision = await db.$transaction(
 			async (tx) => {
-				const { scope } = await reportAccess(
+				const { scope } = await workspaceAccess(
 					tx,
 					context.user.id,
 					input.organizationId,
@@ -160,4 +143,57 @@ const saveReport = protectedProcedure
 		return { revision };
 	});
 
-export const trackingRouter = { attributeOrders, getReport, saveReport };
+const getCostSettings = protectedProcedure
+	.route({
+		method: "GET",
+		path: "/tracking/cost-settings",
+		tags: ["Tracking"],
+		summary: "Read default variable costs for this workspace",
+	})
+	.input(reportScope)
+	.handler(({ input, context }) =>
+		db.$transaction(
+			async (tx) => {
+				const { scope, canEdit } = await workspaceAccess(
+					tx,
+					context.user.id,
+					input.organizationId,
+					false,
+				);
+				return {
+					settings: await readWorkspaceCostSettings(tx, scope),
+					canEdit,
+				};
+			},
+			{ isolationLevel: "RepeatableRead" },
+		),
+	);
+
+const saveCostSettings = protectedProcedure
+	.route({
+		method: "POST",
+		path: "/tracking/cost-settings",
+		tags: ["Tracking"],
+		summary: "Save or clear default variable costs for this workspace",
+	})
+	.input(reportScope.extend({ settings: workspaceCostDefaults.nullable() }))
+	.handler(({ input, context }) =>
+		db.$transaction(async (tx) => {
+			const { scope, canEdit } = await workspaceAccess(
+				tx,
+				context.user.id,
+				input.organizationId,
+				true,
+			);
+			await writeWorkspaceCostSettings(tx, scope, input.settings);
+			return { settings: input.settings, canEdit };
+		}),
+	);
+
+export const trackingRouter = {
+	attributeOrders,
+	getReport,
+	saveReport,
+	getCostSettings,
+	saveCostSettings,
+};

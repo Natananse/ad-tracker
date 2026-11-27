@@ -3,6 +3,7 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import { type CampaignSummary, formatMoney } from "../lib/campaign-report";
+import { CostSourceLabel } from "./CostSourceLabel";
 import { type ChartMetric, chartMetrics } from "./campaign-chart-metrics";
 
 const campaignsPerPage = 6;
@@ -161,6 +162,14 @@ export function CampaignComparison({
 															currency,
 															locale,
 														)}
+												{key === "contribution" &&
+													value !== null && (
+														<CostSourceLabel
+															source={
+																summary.costSource
+															}
+														/>
+													)}
 											</span>
 										</dd>
 									</div>

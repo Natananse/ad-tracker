@@ -123,7 +123,7 @@
 		"lint": "biome lint .",
 		"shadcn-ui": "pnpm dlx shadcn@latest",
 		"start": "next start",
-		"test:campaign-report": "node --experimental-strip-types --test modules/saas/tracking/lib/campaign-*.test.mjs",
+		"test:campaign-report": "node --experimental-strip-types --test modules/saas/tracking/lib/campaign-*.test.mjs ../../packages/api/modules/tracking/*.test.mjs ../../packages/api/modules/tracking/attribution/*.test.mjs",
 		"type-check": "next typegen && tsc --noEmit"
 	},
 	"version": "0.0.0"

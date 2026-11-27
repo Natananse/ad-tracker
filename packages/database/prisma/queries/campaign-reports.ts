@@ -23,6 +23,7 @@ export async function readCampaignReport(
 					refunds: true,
 					spend: true,
 					costs: true,
+					orders: true,
 				},
 				orderBy: [
 					{ date: "asc" },

@@ -154,10 +154,11 @@ test("row cap reports the first excess record and other errors are still accessi
 });
 
 test("the download template contains the exact header and one complete importable example", () => {
-	assert.equal(TEMPLATE_CSV.trimEnd().split("\r\n")[0], header);
+	assert.equal(TEMPLATE_CSV.trimEnd().split("\r\n")[0], `${header},orders`);
 	assert.equal(TEMPLATE_CSV.trimEnd().split("\r\n").length, 2);
 	const rows = parseCampaignCsv(TEMPLATE_CSV);
 	assert.equal(rows.length, 1);
 	assert.equal(rows[0].currency, "USD");
+	assert.equal(rows[0].orders, 10);
 	assert.ok(rows[0].sales > 0);
 });

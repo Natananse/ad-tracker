@@ -30,21 +30,33 @@ Open `/demo` for the public sample. Signing in opens the workspace’s **Campaig
 
 For first-click or last-click reporting, open **Import orders and ad clicks (JSON)** and import a normalized JSON snapshot of orders, refunds, eligible clicks and daily spend. Choose a 7- or 28-day lookback, inspect order evidence, then save. The API computes the result and stores the normalized source with the report so it can be recalculated. [Order snapshot format and example](packages/api/modules/tracking/attribution/README.md)
 
-The source of data in this version is file import. Apply the updated schema to a development PostgreSQL database using `pnpm --filter @repo/database generate` and `pnpm --filter @repo/database push` before running the report. Fresh installations use the existing setup command.
+The source of data in this version is file import. Run `pnpm --filter @repo/database migrate:deploy` and `pnpm --filter @repo/database generate` before starting the updated app. Fresh local installations run both commands during setup. If an older database was created with `db push` and Prisma reports P3005, first verify that its existing tables and constraints match `00000000000000_init`. Once verified, record that baseline with `pnpm --filter @repo/database exec prisma migrate resolve --applied 00000000000000_init` and rerun the deployment command.
 
 Choose **Download CSV template** for the headers and one example row. Use one currency per new CSV and one row per date, channel and campaign. Enter the date as `YYYY-MM-DD` and amounts in the currency's major units. Use sales after discounts and merchandise refunds, excluding taxes and shipping income. Costs cover product, fulfillment, payment fees and other variable costs. Leave unknown spend or costs blank and enter `0` for a confirmed zero. If a file has errors, the preview lists the affected rows and columns.
 
 Filter by date, channel and campaign to update the rankings, charts, order evidence and CSV export. Older reports with multiple currencies still open one currency at a time. Net revenue is sales less refunds. ROAS divides net revenue by ad spend. Contribution subtracts spend and variable costs from net revenue. For campaigns with positive known spend and a positive margin before ads, break-even ROAS is net revenue divided by net revenue less variable costs. For example, $100 net revenue and $60 in variable costs require a 2.5× return to break even. The sample reproduces the two-campaign comparison in the [MVP requirements](prd/04-mvp-requirements.md).
+
+### Workspace cost settings
+
+Open **Workspace cost settings** on the campaign report to fill in missing variable costs. Choose a currency, enter the product cost percentage and payment fee percentage, then enter the fixed payment fee and fulfillment cost per paid order. Enter an explicit zero for a cost that does not apply. Organization members can view the defaults. Owners and admins can change them. Personal settings apply only to the signed-in user's workspace.
+
+Both percentages use sales after discounts and before refunds. Each percentage amount rounds to the nearest minor unit, with halves rounding up. For example, $100 in sales, two orders, 30% product cost, a 3% payment fee, a $0.30 fixed fee and $2 fulfillment per order produce $37.60 in estimated costs. With $20 in ad spend and no refunds, contribution is $42.40.
+
+CSV files can include an optional `orders` column with a whole number of paid orders. A blank count leaves the estimate unknown when a per-order fee is positive. JSON snapshots already contain the individual orders, so rounding and fees apply to each missing-cost order. Entered amounts, including zero, always take precedence. Saved settings apply to reports in the selected currency and can be edited or turned off to recalculate the view. Imported costs stay in their original form. Campaign details and CSV exports identify the cost source.
 
 ### Reporting backend
 
 | Authenticated API | Behavior |
 | --- | --- |
 | `tracking.attributeOrders` | Preview allocations, daily campaign totals, and the credited click for each order. |
-| `tracking.getReport` | Read the current personal or organization report, its revision, and the viewer's edit permission. |
+| `tracking.getReport` | Read the workspace report, revision, edit permission and cost settings. Returned rows retain the imported `costs` field and identify any estimate with `estimatedCosts` and `costSource`. |
 | `tracking.saveReport` | Atomically replace daily facts from CSV rows or recompute them from an order snapshot. A stale revision returns a conflict. |
+| `tracking.getCostSettings` | Read the workspace's defaults and whether the current user can edit them. |
+| `tracking.saveCostSettings` | Save all four defaults and their currency, or clear the defaults for this workspace. |
 
 PostgreSQL stores one `campaign_report` per workspace. Each owns `campaign_daily_fact` rows keyed by date, channel, campaign, and currency. Money is stored in integer minor units. Order-based reports also retain the attribution rule, lookback window, normalized order data, and eligible clicks. Both the public demo and authenticated reports use the same allocation logic.
+
+The `workspace_cost_settings` table stores one profile for each workspace that enables estimates. Percentages use whole basis points (2.90% is 290), and fixed fees use whole minor units ($0.30 is 30 US cents).
 
 ## Common commands
 

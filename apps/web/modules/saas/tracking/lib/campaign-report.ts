@@ -1,3 +1,7 @@
+import type { CostSource } from "@repo/api/modules/tracking/workspace-costs";
+
+export type { CostSource } from "@repo/api/modules/tracking/workspace-costs";
+
 const columns = [
 	"date",
 	"channel",
@@ -11,8 +15,8 @@ const columns = [
 
 const csvHeader = `${columns.join(",")}\r\n`;
 export const TEMPLATE_CSV =
-	csvHeader +
-	"2026-11-02,Meta,Autumn launch,USD,600.00,0.00,125.00,350.00\r\n";
+	`${columns.join(",")},orders\r\n` +
+	"2026-11-02,Meta,Autumn launch,USD,600.00,0.00,125.00,350.00,10\r\n";
 export const SAMPLE_CSV =
 	csvHeader +
 	[
@@ -31,6 +35,9 @@ export interface CampaignDay {
 	refunds: number;
 	spend: number | null;
 	costs: number | null;
+	orders?: number | null;
+	costSource?: CostSource;
+	estimatedCosts?: number | null;
 }
 
 export interface CampaignFilter {
@@ -41,7 +48,9 @@ export interface CampaignFilter {
 	end: string;
 }
 
-export interface CampaignSummary extends Omit<CampaignDay, "date"> {
+export interface CampaignSummary
+	extends Omit<CampaignDay, "date" | "orders" | "estimatedCosts"> {
+	costSource: CostSource;
 	firstDate: string;
 	lastDate: string;
 	days: number;
@@ -53,6 +62,7 @@ export interface CampaignSummary extends Omit<CampaignDay, "date"> {
 
 export interface CampaignTrendDay {
 	date: string;
+	costSource: CostSource;
 	netRevenue: number;
 	spend: number | null;
 	contribution: number | null;
@@ -64,7 +74,7 @@ const currencyFormats = new Map<
 	{ formatter: Intl.NumberFormat; places: number }
 >();
 
-function currencyFormat(currency: string, locale: string) {
+export function currencyFormat(currency: string, locale: string) {
 	const key = `${currency}/${locale}`;
 	let format = currencyFormats.get(key);
 	if (!format) {
@@ -81,7 +91,7 @@ function currencyFormat(currency: string, locale: string) {
 	return format;
 }
 
-function decimalAmount(minor: number, places: number) {
+export function decimalAmount(minor: number, places: number) {
 	const digits = Math.abs(minor)
 		.toString()
 		.padStart(places + 1, "0");
@@ -161,7 +171,10 @@ export function parseCampaignCsv(text: string): CampaignDay[] {
 		let message: string | undefined;
 		if (header.value.malformed.has(index)) {
 			message = "Fix the quoting in this header.";
-		} else if (!columns.some((expected) => expected === name)) {
+		} else if (
+			name !== "orders" &&
+			!columns.some((expected) => expected === name)
+		) {
 			message =
 				"Remove this unrecognized column or use its exact template name.";
 		} else if (indices.has(name)) {
@@ -208,7 +221,7 @@ export function parseCampaignCsv(text: string): CampaignDay[] {
 		}
 		if (cells.length < headers.length) {
 			for (const [column, index] of indices) {
-				if (index >= cells.length) {
+				if (index >= cells.length && column !== "orders") {
 					problem(
 						column,
 						"This field is missing. Keep an empty cell for unknown spend or costs.",
@@ -221,7 +234,7 @@ export function parseCampaignCsv(text: string): CampaignDay[] {
 				`Expected ${headers.length} columns, found ${cells.length}. Quote any commas inside a name.`,
 			);
 		}
-		const value = (name: (typeof columns)[number]) => {
+		const value = (name: (typeof columns)[number] | "orders") => {
 			const index = indices.get(name);
 			return index === undefined || malformed.has(index)
 				? undefined
@@ -328,6 +341,18 @@ export function parseCampaignCsv(text: string): CampaignDay[] {
 		const refunds = amount("refunds");
 		const spend = amount("spend");
 		const costs = amount("costs");
+		const orderCell = value("orders");
+		const orders = orderCell ? Number(orderCell) : null;
+		if (
+			orderCell &&
+			orders !== null &&
+			(!/^\d+$/.test(orderCell) || orders > 2_147_483_647)
+		) {
+			problem(
+				"orders",
+				"Enter a whole order count from 0 to 2,147,483,647 or leave this cell blank.",
+			);
+		}
 		if (
 			!supported ||
 			sales == null ||
@@ -367,6 +392,7 @@ export function parseCampaignCsv(text: string): CampaignDay[] {
 				refunds,
 				spend,
 				costs,
+				...(indices.has("orders") ? { orders } : {}),
 			});
 		}
 	}
@@ -384,7 +410,39 @@ export function parseCampaignCsv(text: string): CampaignDay[] {
 }
 
 function addKnown(total: number | null, value: number | null) {
-	return total === null || value === null ? null : total + value;
+	if (total === null || value === null) {
+		return null;
+	}
+	const sum = total + value;
+	return Number.isSafeInteger(sum) ? sum : null;
+}
+
+function rowCostSource(row: CampaignDay): CostSource {
+	if (row.costs !== null) {
+		return "entered";
+	}
+	return row.estimatedCosts == null
+		? "unknown"
+		: (row.costSource ?? "estimated");
+}
+
+function mergeCostSources(first: CostSource, second: CostSource): CostSource {
+	if (first === "unknown" || second === "unknown") {
+		return "unknown";
+	}
+	return first === second ? first : "mixed";
+}
+
+export function combinedCostSource(summaries: CampaignSummary[]): CostSource {
+	let source: CostSource | undefined;
+	let total: number | null = 0;
+	for (const campaign of summaries) {
+		source = source
+			? mergeCostSources(source, campaign.costSource)
+			: campaign.costSource;
+		total = addKnown(total, campaign.costs);
+	}
+	return total === null ? "unknown" : (source ?? "unknown");
 }
 
 export function matchesCampaignFilter(
@@ -405,32 +463,54 @@ function contributionAfterAds(
 	spend: number | null,
 	costs: number | null,
 ) {
-	return spend === null || costs === null ? null : netRevenue - spend - costs;
+	if (spend === null || costs === null) {
+		return null;
+	}
+	const amount = netRevenue - spend - costs;
+	return Number.isSafeInteger(amount) ? amount : null;
 }
 
 export function buildCampaignTrend(
 	rows: CampaignDay[],
 	filter: CampaignFilter,
 ): CampaignTrendDay[] {
-	const days = new Map<string, CampaignTrendDay>();
+	const days = new Map<string, CampaignTrendDay & { costs: number | null }>();
 	for (const row of rows) {
 		if (!matchesCampaignFilter(row, filter)) {
 			continue;
 		}
 		let day = days.get(row.date);
 		if (!day) {
-			day = { date: row.date, netRevenue: 0, spend: 0, contribution: 0 };
+			day = {
+				date: row.date,
+				netRevenue: 0,
+				spend: 0,
+				costs: 0,
+				contribution: 0,
+				costSource: rowCostSource(row),
+			};
 			days.set(row.date, day);
 		}
 		const netRevenue = row.sales - row.refunds;
 		day.netRevenue += netRevenue;
 		day.spend = addKnown(day.spend, row.spend);
-		day.contribution = addKnown(
-			day.contribution,
-			contributionAfterAds(netRevenue, row.spend, row.costs),
+		day.costs = addKnown(
+			day.costs,
+			row.costs ?? row.estimatedCosts ?? null,
+		);
+		day.costSource =
+			day.costs === null
+				? "unknown"
+				: mergeCostSources(day.costSource, rowCostSource(row));
+		day.contribution = contributionAfterAds(
+			day.netRevenue,
+			day.spend,
+			day.costs,
 		);
 	}
-	return [...days.values()].sort((a, b) => a.date.localeCompare(b.date));
+	return [...days.values()]
+		.map(({ costs, ...day }) => day)
+		.sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export function campaignOverview(summaries: CampaignSummary[]) {
@@ -438,13 +518,11 @@ export function campaignOverview(summaries: CampaignSummary[]) {
 	let refunds = 0;
 	let costs: number | null = 0;
 	let spend: number | null = 0;
-	let contribution: number | null = 0;
 	for (const campaign of summaries) {
 		sales += campaign.sales;
 		refunds += campaign.refunds;
 		costs = addKnown(costs, campaign.costs);
 		spend = addKnown(spend, campaign.spend);
-		contribution = addKnown(contribution, campaign.contribution);
 	}
 	const netRevenue = sales - refunds;
 	return {
@@ -453,7 +531,7 @@ export function campaignOverview(summaries: CampaignSummary[]) {
 		costs,
 		netRevenue,
 		spend,
-		contribution,
+		contribution: contributionAfterAds(netRevenue, spend, costs),
 		roas: spend ? netRevenue / spend : null,
 	};
 }
@@ -478,6 +556,7 @@ export function buildCampaignReport(
 				refunds: 0,
 				spend: 0,
 				costs: 0,
+				costSource: rowCostSource(row),
 				days: 0,
 				firstDate: row.date,
 				lastDate: row.date,
@@ -498,7 +577,14 @@ export function buildCampaignReport(
 		summary.sales += row.sales;
 		summary.refunds += row.refunds;
 		summary.spend = addKnown(summary.spend, row.spend);
-		summary.costs = addKnown(summary.costs, row.costs);
+		summary.costs = addKnown(
+			summary.costs,
+			row.costs ?? row.estimatedCosts ?? null,
+		);
+		summary.costSource =
+			summary.costs === null
+				? "unknown"
+				: mergeCostSources(summary.costSource, rowCostSource(row));
 		summary.netRevenue = summary.sales - summary.refunds;
 		summary.contribution = contributionAfterAds(
 			summary.netRevenue,
@@ -560,7 +646,7 @@ export function makeReportCsv(
 ) {
 	const generatedAt = new Date().toISOString();
 	const lines = [
-		"channel,campaign,currency,filter_start,filter_end,first_date,last_date,reported_days,sales,refunds,net_revenue,spend,costs,roas,contribution_after_ads,spend_complete,costs_complete,generated_at_utc,filter_channel,filter_campaign,break_even_roas",
+		"channel,campaign,currency,filter_start,filter_end,first_date,last_date,reported_days,sales,refunds,net_revenue,spend,costs,roas,contribution_after_ads,spend_complete,costs_complete,generated_at_utc,filter_channel,filter_campaign,break_even_roas,cost_source",
 	];
 	for (const summary of summaries) {
 		const { places } = currencyFormat(summary.currency, "en");
@@ -589,6 +675,7 @@ export function makeReportCsv(
 				exportLabel(filter.channel ?? ""),
 				exportLabel(filter.campaign ?? ""),
 				summary.breakEvenRoas ?? "",
+				summary.costSource,
 			].join(","),
 		);
 	}

@@ -262,13 +262,26 @@ test("daily trends aggregate filtered rows by reported date and preserve gaps an
 		end: "2026-11-05",
 	};
 	assert.deepEqual(buildCampaignTrend(rows, selected), [
-		{ date: "2026-11-01", netRevenue: 2199, spend: 600, contribution: 999 },
-		{ date: "2026-11-03", netRevenue: -800, spend: 50, contribution: null },
+		{
+			date: "2026-11-01",
+			netRevenue: 2199,
+			spend: 600,
+			contribution: 999,
+			costSource: "entered",
+		},
+		{
+			date: "2026-11-03",
+			netRevenue: -800,
+			spend: 50,
+			contribution: null,
+			costSource: "unknown",
+		},
 		{
 			date: "2026-11-05",
 			netRevenue: 600,
 			spend: null,
 			contribution: null,
+			costSource: "entered",
 		},
 	]);
 	const onlyGoogle = { ...selected, channel: "Google" };
@@ -277,7 +290,13 @@ test("daily trends aggregate filtered rows by reported date and preserve gaps an
 	assert.equal(summaries[0].campaign, "Autumn");
 	assert.equal(summaries[0].netRevenue, 1398);
 	assert.deepEqual(buildCampaignTrend(rows, onlyGoogle), [
-		{ date: "2026-11-01", netRevenue: 1398, spend: 400, contribution: 498 },
+		{
+			date: "2026-11-01",
+			netRevenue: 1398,
+			spend: 400,
+			contribution: 498,
+			costSource: "entered",
+		},
 	]);
 	assert.deepEqual(
 		buildCampaignTrend(rows, { ...selected, campaign: "Absent" }),

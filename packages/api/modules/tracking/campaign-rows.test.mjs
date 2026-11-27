@@ -32,3 +32,29 @@ test("campaign imports reject duplicate daily facts after trimming names", () =>
 		false,
 	);
 });
+
+test("daily order counts distinguish unknown, confirmed zero and a valid count", () => {
+	for (const orders of [undefined, null, 0, 5, 2_147_483_647]) {
+		assert.deepEqual(campaignRows.parse([{ ...day, orders }]), [
+			{ ...day, orders },
+		]);
+	}
+	for (const orders of [-1, 1.5, 2_147_483_648]) {
+		assert.equal(
+			campaignRows.safeParse([{ ...day, orders }]).success,
+			false,
+		);
+	}
+});
+
+test("sending report rows back to the API never turns their display estimates into imported costs", () => {
+	for (const costs of [null, 0, 20]) {
+		const raw = { ...day, sales: 100, costs };
+		const projected = {
+			...raw,
+			estimatedCosts: 30,
+			costSource: "estimated",
+		};
+		assert.deepEqual(campaignRows.parse([projected]), [raw]);
+	}
+});

@@ -1,5 +1,6 @@
 "use client";
 
+import type { WorkspaceCostDefaults } from "@repo/api/modules/tracking/cost-settings";
 import { Alert } from "@ui/components/alert";
 import { Button } from "@ui/components/button";
 import { Card } from "@ui/components/card";
@@ -30,6 +31,7 @@ import {
 	type CampaignSummary,
 	campaignExtremes,
 	campaignOverview,
+	combinedCostSource,
 	formatMoney,
 	makeReportCsv,
 	matchesCampaignFilter,
@@ -37,6 +39,7 @@ import {
 import { downloadReportFile } from "../lib/download-report-file";
 import { CampaignComparison } from "./CampaignComparison";
 import { CampaignTrend } from "./CampaignTrend";
+import { CostSourceLabel } from "./CostSourceLabel";
 import {
 	AttributionEvidence,
 	type AttributionSource,
@@ -75,6 +78,7 @@ function ContributionHighlight({
 						<span className="text-sm break-words">
 							{first.campaign} · {first.channel}
 						</span>
+						<CostSourceLabel source={first.costSource} />
 						{campaigns.length > 1 && (
 							<details
 								className="mt-1 text-sm"
@@ -101,6 +105,9 @@ function ContributionHighlight({
 											>
 												{campaign.campaign} ·{" "}
 												{campaign.channel}
+												<CostSourceLabel
+													source={campaign.costSource}
+												/>
 											</li>
 										))}
 									</ul>
@@ -119,9 +126,11 @@ function ContributionHighlight({
 export function ReportResults({
 	rows,
 	attribution,
+	costSettings,
 }: {
 	rows: CampaignDay[];
 	attribution?: { source: AttributionSource; result: OrderEvidence };
+	costSettings?: WorkspaceCostDefaults | null;
 }) {
 	const locale = useLocale();
 	const ranges = useMemo(() => {
@@ -188,6 +197,7 @@ export function ReportResults({
 		maximumFractionDigits: 2,
 	});
 	const overview = campaignOverview(summaries);
+	const overviewCostSource = combinedCostSource(summaries);
 	const { best, worst } = campaignExtremes(summaries);
 	const days = useMemo(
 		() => buildCampaignTrend(rows, filter),
@@ -209,6 +219,34 @@ export function ReportResults({
 		};
 	}, [attribution, filter]);
 	const range = ranges.get(filter.currency);
+	let missingCostHint: string | undefined;
+	if (
+		summaries.some((summary) => summary.costs === null) &&
+		costSettings !== undefined
+	) {
+		if (!costSettings) {
+			missingCostHint =
+				"Open Workspace cost settings to estimate blank variable costs.";
+		} else if (costSettings.currency !== filter.currency) {
+			missingCostHint = `Workspace defaults use ${costSettings.currency}. Blank costs in ${filter.currency} stay unknown.`;
+		} else if (
+			!attribution &&
+			(costSettings.fixedPaymentFeeMinor > 0 ||
+				costSettings.fulfillmentCostMinor > 0) &&
+			rows.some(
+				(row) =>
+					matchesCampaignFilter(row, filter) &&
+					row.costs === null &&
+					row.orders == null,
+			)
+		) {
+			missingCostHint =
+				"Add the paid order count in the CSV orders column to estimate per-order fees on rows with blank costs.";
+		} else {
+			missingCostHint =
+				"Some costs could not be estimated. Check the imported amounts and workspace defaults.";
+		}
+	}
 	const hasFilters = Boolean(
 		filter.channel || filter.campaign || filter.start || filter.end,
 	);
@@ -279,8 +317,13 @@ export function ReportResults({
 								(item) => item.contribution === null,
 							)) && (
 							<p className="mt-2 text-sm text-muted-foreground">
-								Only campaigns with known ad spend and variable
-								costs can be ranked.
+								A campaign needs ad spend and a complete cost
+								total to be ranked.
+							</p>
+						)}
+						{missingCostHint && (
+							<p className="mt-2 text-sm text-muted-foreground">
+								{missingCostHint}
 							</p>
 						)}
 					</div>
@@ -484,6 +527,7 @@ export function ReportResults({
 							</h3>
 							<p className="my-3 break-words text-3xl font-semibold tracking-tight tabular-nums sm:text-4xl">
 								{money(overview.contribution, "Incomplete")}
+								<CostSourceLabel source={overviewCostSource} />
 							</p>
 							<dl className="divide-y divide-teal-50/15 border-t border-teal-50/20 text-sm">
 								{[
@@ -613,6 +657,9 @@ export function ReportResults({
 											</TableCell>
 											<TableCell className="text-right">
 												{money(summary.costs)}
+												<CostSourceLabel
+													source={summary.costSource}
+												/>
 											</TableCell>
 											<TableCell
 												className={`text-right font-semibold ${summary.contribution === null ? "text-muted-foreground" : summary.contribution < 0 ? "text-rose-700 dark:text-rose-300" : "text-emerald-700 dark:text-emerald-300"}`}
@@ -673,9 +720,11 @@ export function ReportResults({
 							and requires known, positive spend. Contribution
 							subtracts ad spend and variable costs from net
 							revenue and requires both inputs on every included
-							day. Break-even ROAS divides net revenue by the
-							amount left after variable costs. It is shown for
-							campaigns with positive ad spend and a positive
+							day. The cost source shown below each variable cost
+							also applies to that campaign’s contribution and
+							break-even ROAS. Break-even ROAS divides net revenue
+							by the amount left after variable costs. It is shown
+							for campaigns with positive ad spend and a positive
 							margin before ads.
 						</p>
 					</Card>

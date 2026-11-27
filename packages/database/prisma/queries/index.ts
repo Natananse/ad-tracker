@@ -3,3 +3,4 @@ export * from "./campaign-reports";
 export * from "./organizations";
 export * from "./purchases";
 export * from "./users";
+export * from "./workspace-cost-settings";

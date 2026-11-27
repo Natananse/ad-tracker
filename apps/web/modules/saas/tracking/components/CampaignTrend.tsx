@@ -2,6 +2,7 @@
 
 import { useId, useMemo, useState } from "react";
 import { type CampaignTrendDay, formatMoney } from "../lib/campaign-report";
+import { CostSourceLabel } from "./CostSourceLabel";
 import { chartMetrics } from "./campaign-chart-metrics";
 
 const dayInMs = 86_400_000;
@@ -233,6 +234,17 @@ export function CampaignTrend({
 					{days.length > 1 && <span>{lastDate}</span>}
 				</div>
 			</div>
+			{days.some(
+				(day) =>
+					day.contribution !== null &&
+					(day.costSource === "estimated" ||
+						day.costSource === "mixed"),
+			) && (
+				<p className="mt-3 text-xs text-muted-foreground">
+					The contribution line includes estimated costs. Open daily
+					values to see the source for each date.
+				</p>
+			)}
 			{plot.hasGaps && (
 				<p className="mt-3 text-xs text-muted-foreground">
 					Lines break where a day or an amount is missing.
@@ -296,6 +308,15 @@ export function CampaignTrend({
 															currency,
 															locale,
 														)}
+												{key === "contribution" &&
+													day.contribution !==
+														null && (
+														<CostSourceLabel
+															source={
+																day.costSource
+															}
+														/>
+													)}
 											</td>
 										))}
 									</tr>

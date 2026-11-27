@@ -40,6 +40,7 @@ model User {
     twofactors         TwoFactor[]
     aiChats            AiChat[]
     campaignReport     CampaignReport?
+    costSettings       WorkspaceCostSettings?
     blogPosts          BlogPost[]
     productUpdates     ProductUpdate[] @relation("productUpdates")
 
@@ -141,6 +142,7 @@ model Organization {
     purchases          Purchase[]
     aiChats            AiChat[]
     campaignReport     CampaignReport?
+    costSettings       WorkspaceCostSettings?
 
     @@unique([slug])
     @@map("organization")
@@ -224,6 +226,21 @@ model CampaignReport {
     @@map("campaign_report")
 }
 
+model WorkspaceCostSettings {
+    id                   String        @id @default(cuid())
+    userId               String?       @unique
+    user                 User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+    organizationId       String?       @unique
+    organization         Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    currency             String        @db.VarChar(3)
+    productCostBps       Int
+    paymentFeeBps        Int
+    fixedPaymentFeeMinor BigInt
+    fulfillmentCostMinor BigInt
+
+    @@map("workspace_cost_settings")
+}
+
 model CampaignDailyFact {
     reportId String
     report   CampaignReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
@@ -236,6 +253,7 @@ model CampaignDailyFact {
     refunds  BigInt
     spend    BigInt?
     costs    BigInt?
+    orders   Int?
 
     @@id([reportId, date, channel, campaign, currency])
     @@map("campaign_daily_fact")
